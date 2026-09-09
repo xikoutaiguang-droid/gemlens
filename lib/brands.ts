@@ -8,6 +8,22 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5分キャッシュ（サーバーレス�
 let cache: { data: BrandEntry[]; fetchedAt: number } | null = null;
 
 function getAuth() {
+  // 優先: ダウンロードしたサービスアカウントJSONの中身をまるごと1つの環境変数に貼る方式
+  // （Vercelの環境変数UIに改行込みで貼り付けるだけで済み、設定ミスが起きにくい）
+  const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (rawJson) {
+    const parsed = JSON.parse(rawJson) as { client_email?: string; private_key?: string };
+    if (!parsed.client_email || !parsed.private_key) {
+      throw new Error("GOOGLE_SERVICE_ACCOUNT_KEYの形式が不正です");
+    }
+    return new google.auth.JWT({
+      email: parsed.client_email,
+      key: parsed.private_key,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+  }
+
+  // フォールバック: email/private_keyを個別の環境変数として設定する方式
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
   if (!email || !privateKey) {
