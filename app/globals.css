@@ -22,6 +22,7 @@ body {
 
 #app-root {
   height: 100vh;
+  height: 100dvh; /* モバイルのアドレスバー分の誤差を補正（100vhだと下部ボタンが画面外に出る） */
   display: flex;
   flex-direction: column;
   width: 100%;
