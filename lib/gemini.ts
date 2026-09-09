@@ -167,7 +167,9 @@ export async function guessBrandFromLogo(
 
     const payload: Record<string, unknown> = {
       contents: [{ parts: [...imageParts, { text: prompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: -1 } },
+      // thinkingConfigの思考トークンもmaxOutputTokensの予算を消費するため、
+      // JSON出力が尻切れにならないよう十分に大きい上限を確保する
+      generationConfig: { temperature: 0.1, maxOutputTokens: 3000, thinkingConfig: { thinkingBudget: -1 } },
     };
     if (useGrounding) {
       payload.tools = [{ google_search: {} }];
@@ -189,7 +191,12 @@ export async function guessBrandFromLogo(
     const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
-      // 旧形式（プレーンテキスト）へのフォールバック
+      // "{"で始まっているのに閉じ括弧が無い＝JSON出力が途中で切れただけであり、
+      // ブランド名の断片を誤ってそのまま採用しないようにする（trueな旧形式プレーンテキストのみ許容）
+      if (trimmed.startsWith("{")) {
+        console.error(`[guessBrandFromLogo] JSON出力が不完全（トークン上限などで途中切断された可能性）: ${trimmed}`);
+        return { brandName: null };
+      }
       return { brandName: trimmed && trimmed !== "不明" ? trimmed : null };
     }
 
