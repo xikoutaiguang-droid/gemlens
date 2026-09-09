@@ -251,17 +251,27 @@ async function callGeminiAdviceInternal(brandName: string, useGrounding: boolean
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[callGeminiAdvice${useGrounding ? "/grounded" : "/fallback"}] HTTP ${response.status}: ${await response.text()}`);
+      return null;
+    }
 
     const json = (await response.json()) as GeminiApiResponse;
     const content = extractText(json);
-    if (!content) return null;
+    if (!content) {
+      console.error(`[callGeminiAdvice${useGrounding ? "/grounded" : "/fallback"}] 応答にテキストが含まれていません: ${JSON.stringify(json)}`);
+      return null;
+    }
 
     const jsonMatch = content.trim().match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    if (!jsonMatch) {
+      console.error(`[callGeminiAdvice${useGrounding ? "/grounded" : "/fallback"}] JSON形式でない応答: ${content}`);
+      return null;
+    }
 
     return JSON.parse(jsonMatch[0]) as MarketAdvice;
-  } catch {
+  } catch (e) {
+    console.error(`[callGeminiAdvice${useGrounding ? "/grounded" : "/fallback"}] 例外:`, e);
     return null;
   }
 }
