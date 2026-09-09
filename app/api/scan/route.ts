@@ -34,9 +34,16 @@ async function callGeminiVision(
       return { brandName: matched.brandName, perceivedText: perceived, matchSource: "gemini-text" };
     }
 
-    // 文字は読み取れたが登録ブランドと一致しない
-    // → タグデザインが多様で誤読している可能性があるため、
-    //    ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する
+    // ブランド名（正式表記）とは一致しなかったが、タグデザインが多様で
+    // スタイライズされたフォントの誤読パターンが読み取りキーワードとして
+    // 登録されている場合がある（例：SAINT MICHAELの「SA1NT M1CH43L」等）。
+    // AIにロゴ推測をさせる前に、まずこの決定的な照合を試みる。
+    const kwMatchFromPerceived = matchByKeywords(perceived, brandEntries);
+    if (kwMatchFromPerceived) {
+      return { brandName: kwMatchFromPerceived.brandName, perceivedText: perceived, matchSource: "keyword-retry" };
+    }
+
+    // それでも一致しない場合のみ、ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する
     const logoResult = await guessBrandFromLogo(base64Images, visionResult, brandEntries, perceived, useGrounding);
     return {
       ...logoResult,
