@@ -177,6 +177,7 @@ export async function POST(req: NextRequest) {
     if (visionResult.text) debugLines.push("[TEXT] " + visionResult.text);
     if (visionResult.logos.length) debugLines.push("[LOGO] " + visionResult.logos.join(", "));
     if (visionResult.webNames.length) debugLines.push("[WEB] " + visionResult.webNames.join(", "));
+    if (visionResult.pageTitles.length) debugLines.push("[PAGES] " + visionResult.pageTitles.join(" / "));
 
     const brandEntries = await loadBrandEntries();
     let geminiResult = await callGeminiVision(base64Images, visionResult, brandEntries, deviceId);
