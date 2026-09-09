@@ -118,8 +118,10 @@ export async function guessBrandFromLogo(
     const visionInfo = [
       perceivedHint ? "OCR読み取り文字（登録ブランドと不一致・誤読の可能性あり）: " + perceivedHint : "",
       visionResult.logos.length ? "ロゴ検出: " + visionResult.logos.join(", ") : "",
-      visionResult.webNames.length
-        ? "Web画像検索による推定（Googleレンズ相当）: " + visionResult.webNames.join(", ")
+      visionResult.webNames.length ? "Web画像検索によるラベル推定: " + visionResult.webNames.join(", ") : "",
+      visionResult.pageTitles.length
+        ? "この画像と同一・類似の画像が掲載されているWebページのタイトル（Googleレンズと同じ仕組みの検索結果。フリマ・オークション等の出品タイトルにブランド名が直接書かれていることが多く、最も信頼できる手がかりです）:\n" +
+          visionResult.pageTitles.map((t) => "・" + t).join("\n")
         : "",
     ]
       .filter(Boolean)
@@ -141,8 +143,10 @@ export async function guessBrandFromLogo(
       "【手順】",
       "1. まず画像に写っているロゴ・エンブレム・刺繍・型押しなどの視覚的特徴（例：鍵が3本交差している、動物のシルエット、",
       "   幾何学模様、頭文字のモノグラムなど）を具体的に言語化してください。文字がうっすら読めた場合はそれも含めてください。",
-      "2. その特徴やOCR読み取り文字（スタイライズされたフォントによる誤読の可能性を考慮）をもとに、",
-      "   必要であればあなた自身のGoogle検索能力も使って、実際のブランドを特定してください。",
+      "2. 【補助情報】に類似画像掲載ページのタイトルがある場合は最優先の手がかりとして扱ってください",
+      "   （出品タイトルに書かれたブランド名は、あなた自身の推測より信頼できます）。",
+      "   それが無い、または手がかりとして不十分な場合は、視覚的特徴やOCR読み取り文字をもとに、",
+      "   必要であればあなた自身のGoogle検索能力も使って実際のブランドを特定してください。",
       "   特にOCR読み取り文字が登録ブランド名と1〜2文字だけ違う場合（誤読の可能性が高い）は、その登録ブランドを優先的に検討してください。",
       "3. 登録ブランドリストの中に高い確信度で一致するものがあるか判断してください。",
       "",

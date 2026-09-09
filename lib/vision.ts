@@ -2,6 +2,7 @@ export interface VisionResult {
   text: string | null;
   logos: string[];
   webNames: string[];
+  pageTitles: string[];
 }
 
 interface VisionApiResponseBody {
@@ -14,6 +15,7 @@ interface VisionApiResponseBody {
     webDetection?: {
       bestGuessLabels?: Array<{ label?: string }>;
       webEntities?: Array<{ description?: string; score?: number }>;
+      pagesWithMatchingImages?: Array<{ pageTitle?: string; url?: string }>;
     };
   }>;
 }
@@ -33,7 +35,7 @@ export async function callVisionApi(base64Data: string): Promise<VisionResult> {
         features: [
           { type: "DOCUMENT_TEXT_DETECTION" },
           { type: "LOGO_DETECTION", maxResults: 5 },
-          { type: "WEB_DETECTION", maxResults: 5 },
+          { type: "WEB_DETECTION", maxResults: 10 },
         ],
       },
     ],
@@ -77,10 +79,21 @@ export async function callVisionApi(base64Data: string): Promise<VisionResult> {
     }
     if (res.webDetection.webEntities) {
       for (const e of res.webDetection.webEntities) {
-        if (e.description && (e.score ?? 0) >= 0.5) webNames.push(e.description.trim());
+        // 汎用ラベル（stitchなど）だけでは判定に役立たないため、閾値をやや緩めて拾う
+        if (e.description && (e.score ?? 0) >= 0.3) webNames.push(e.description.trim());
       }
     }
   }
 
-  return { text, logos, webNames };
+  // 「Googleレンズ」で実際に使われている、同一・類似画像が掲載されたページのタイトル。
+  // 実売ページのタイトルにブランド名がそのまま書かれていることが多く、
+  // 抽象的なラベル（bestGuessLabels/webEntities）よりブランド特定に直結しやすい。
+  const pageTitles: string[] = [];
+  if (res.webDetection?.pagesWithMatchingImages) {
+    for (const p of res.webDetection.pagesWithMatchingImages) {
+      if (p.pageTitle && p.pageTitle.trim()) pageTitles.push(p.pageTitle.trim());
+    }
+  }
+
+  return { text, logos, webNames, pageTitles: Array.from(new Set(pageTitles)).slice(0, 8) };
 }
