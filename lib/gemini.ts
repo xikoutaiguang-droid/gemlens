@@ -96,6 +96,7 @@ export async function readBrandTextFromImage(
 export interface LogoGuessResult {
   brandName: string | null;
   guessedBrand?: string;
+  visualDescription?: string;
   error?: string;
 }
 
@@ -128,9 +129,6 @@ export async function guessBrandFromLogo(
       perceivedHint
         ? `この画像はブランドタグの写真です。文字は「${perceivedHint}」と読み取れましたが、登録ブランドリストの中に完全一致するものがありませんでした（誤読・タグデザインの違いの可能性があります）。`
         : "この画像はブランドタグの写真ですが、文字情報は読み取れませんでした（ロゴ・エンブレムのみのタグである可能性があります）。",
-      "文字の読み取り結果に加えて、ロゴのデザイン・形状・モチーフ（鍵のマーク、動物、幾何学模様、刺繍パターンなど）、",
-      "Web画像検索による推定情報を手がかりに、必要であればあなた自身のGoogle検索能力も使って、",
-      "このタグが実際にどのブランドのものかを可能な限り特定してください。",
       "",
       "【補助情報】",
       visionInfo || "（なし）",
@@ -140,16 +138,32 @@ export async function guessBrandFromLogo(
       "",
       "ファミリーブランド（例：BEAMS / BEAMS F / BEAMS PLUSなど）は特に注意して区別してください。",
       "",
+      "【手順】",
+      "1. まず画像に写っているロゴ・エンブレム・刺繍・型押しなどの視覚的特徴（例：鍵が3本交差している、動物のシルエット、",
+      "   幾何学模様、頭文字のモノグラムなど）を具体的に言語化してください。文字がうっすら読めた場合はそれも含めてください。",
+      "2. その特徴やOCR読み取り文字（スタイライズされたフォントによる誤読の可能性を考慮）をもとに、",
+      "   必要であればあなた自身のGoogle検索能力も使って、実際のブランドを特定してください。",
+      "   特にOCR読み取り文字が登録ブランド名と1〜2文字だけ違う場合（誤読の可能性が高い）は、その登録ブランドを優先的に検討してください。",
+      "3. 登録ブランドリストの中に高い確信度で一致するものがあるか判断してください。",
+      "",
+      "【重要・厳守】",
+      "・「似ている」「それっぽい」程度の確信度では、絶対にmatchedBrandを埋めないでください。",
+      "・登録リストと完全に一致すると確信できる場合のみ matchedBrand を埋めてください。",
+      "・確信が持てない場合は matchedBrand を空文字のままにし、代わりに（登録リストの有無に関わらず）",
+      "　最も可能性が高いと思われるブランド名を guessedBrand に入れてください。分からなければ空文字にしてください。",
+      "・確信が持てないのに無理に登録リストから選んで誤って別のブランドと断定することが、最も避けるべき失敗です。",
+      "",
       "【回答形式】厳守。以下のJSON形式のみで返してください。説明文やMarkdownのコードブロックは不要です。",
       "{",
-      '  "matchedBrand": "登録ブランドリストの中に完全一致するものがあれば、そのブランド名を完全に同じ表記で（なければ空文字）",',
+      '  "visualDescription": "画像から視認できるロゴ・エンブレム・文字などの特徴（1〜2文で簡潔に）",',
+      '  "matchedBrand": "登録ブランドリストの中に高い確信度で完全一致するものがあれば、そのブランド名を完全に同じ表記で（なければ空文字）",',
       '  "guessedBrand": "登録リストになくても、ロゴやWeb検索から特定できたブランド名（分からなければ空文字）"',
       "}",
     ].join("\n");
 
     const payload: Record<string, unknown> = {
       contents: [{ parts: [...imageParts, { text: prompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 500, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.1, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: -1 } },
     };
     if (useGrounding) {
       payload.tools = [{ google_search: {} }];
@@ -175,7 +189,7 @@ export async function guessBrandFromLogo(
       return { brandName: trimmed && trimmed !== "不明" ? trimmed : null };
     }
 
-    let parsed: { matchedBrand?: string; guessedBrand?: string };
+    let parsed: { matchedBrand?: string; guessedBrand?: string; visualDescription?: string };
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch {
@@ -184,10 +198,11 @@ export async function guessBrandFromLogo(
 
     const matchedBrand = String(parsed.matchedBrand || "").trim();
     const guessedBrand = String(parsed.guessedBrand || "").trim();
+    const visualDescription = String(parsed.visualDescription || "").trim() || undefined;
 
-    if (matchedBrand) return { brandName: matchedBrand };
-    if (guessedBrand) return { brandName: null, guessedBrand };
-    return { brandName: null };
+    if (matchedBrand) return { brandName: matchedBrand, visualDescription };
+    if (guessedBrand) return { brandName: null, guessedBrand, visualDescription };
+    return { brandName: null, visualDescription };
   } catch (e) {
     return { brandName: null, error: String(e) };
   }

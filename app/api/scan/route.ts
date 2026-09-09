@@ -177,6 +177,9 @@ export async function POST(req: NextRequest) {
     if (geminiResult.perceivedText) {
       debugLines.push("[READ] " + geminiResult.perceivedText);
     }
+    if (geminiResult.visualDescription) {
+      debugLines.push("[VISUAL] " + geminiResult.visualDescription);
+    }
 
     // フォールバック: 画像判定が「不明」の場合のみ、キーワードとの辞書照合を試みる
     let matchSource = geminiResult.matchSource || "gemini";
