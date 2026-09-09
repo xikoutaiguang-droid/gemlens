@@ -388,7 +388,7 @@ export default function HomePage() {
   useEffect(() => {
     activateDeveloperKeyFromUrl();
 
-    const splashTimer = setTimeout(() => setShowSplash(false), 1100);
+    const splashTimer = setTimeout(() => setShowSplash(false), 2600);
 
     const deviceId = getDeviceId();
     const devKey = getDeveloperKey();
