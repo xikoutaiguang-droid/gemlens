@@ -1,0 +1,17 @@
+{
+  "name": "GEMLENS | ブランドタグ判定",
+  "short_name": "GEMLENS",
+  "description": "ブランドタグを撮影するだけでAIがブランドを判定し、相場情報も確認できるツールです。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

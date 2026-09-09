@@ -4,7 +4,7 @@ import { loadBrandEntries } from "@/lib/brands";
 import { readBrandTextFromImage, guessBrandFromLogo, callGeminiAdvice, type LogoGuessResult, type MarketAdvice } from "@/lib/gemini";
 import { matchBrandName, matchByKeywords, norm, type BrandEntry } from "@/lib/matching";
 import { isProUser } from "@/lib/pro";
-import { checkAndIncrementUsage } from "@/lib/rateLimit";
+import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -73,6 +73,7 @@ interface ScanResult {
   debugText?: string;
   limitReached?: boolean;
   marketInfo?: MarketAdvice | null;
+  usage?: UsageResult;
 }
 
 // 最終結果の組み立て
@@ -146,18 +147,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const rawImages = body?.images;
     const deviceId: string | undefined = typeof body?.deviceId === "string" ? body.deviceId : undefined;
+    const devKey: string | undefined = typeof body?.devKey === "string" ? body.devKey : undefined;
 
     if (!Array.isArray(rawImages) || !rawImages.length) {
       return NextResponse.json({ success: false, message: "画像がありません。" }, { status: 400 });
     }
     const base64Images: string[] = rawImages.slice(0, 3);
 
-    const usage = await checkAndIncrementUsage(deviceId);
+    const usage = await checkAndIncrementUsage(deviceId, devKey);
     if (!usage.allowed) {
       return NextResponse.json({
         success: false,
         limitReached: true,
         message: `本日の無料利用回数（${usage.limit}回）に達しました。また明日お試しください。`,
+        usage,
       });
     }
 
@@ -199,6 +202,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    result.usage = usage;
     return NextResponse.json(result);
   } catch (error) {
     console.error("[scan API ERROR]", error);

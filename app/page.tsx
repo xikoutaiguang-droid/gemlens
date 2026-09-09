@@ -24,6 +24,13 @@ interface Candidate {
   marketInfo?: MarketAdvice | null;
 }
 
+interface UsageInfo {
+  allowed: boolean;
+  count: number;
+  limit: number;
+  isDeveloper: boolean;
+}
+
 interface ScanResult {
   success: boolean;
   single?: boolean;
@@ -37,6 +44,7 @@ interface ScanResult {
   debugText?: string;
   limitReached?: boolean;
   marketInfo?: MarketAdvice | null;
+  usage?: UsageInfo;
 }
 
 type Phase = "idle" | "staging" | "loading" | "result-single" | "result-candidates" | "result-error";
@@ -55,6 +63,35 @@ function getDeviceId(): string {
     return id;
   } catch {
     return "anonymous";
+  }
+}
+
+// ============================================================
+//  開発者キー（?dev=キー を一度開くと端末に保存され、以後の全アクセスで有効）
+// ============================================================
+const DEV_KEY_STORAGE = "gemlens_dev_key";
+
+function activateDeveloperKeyFromUrl(): void {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const dev = params.get("dev");
+    if (dev) {
+      localStorage.setItem(DEV_KEY_STORAGE, dev);
+      params.delete("dev");
+      const cleanUrl =
+        window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getDeveloperKey(): string | undefined {
+  try {
+    return localStorage.getItem(DEV_KEY_STORAGE) || undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -338,6 +375,8 @@ export default function HomePage() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [showRetry, setShowRetry] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -345,6 +384,27 @@ export default function HomePage() {
   const timeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanRequestIdRef = useRef(0);
   const lastImagesRef = useRef<string[] | null>(null);
+
+  useEffect(() => {
+    activateDeveloperKeyFromUrl();
+
+    const splashTimer = setTimeout(() => setShowSplash(false), 1100);
+
+    const deviceId = getDeviceId();
+    const devKey = getDeveloperKey();
+    const params = new URLSearchParams({ deviceId });
+    if (devKey) params.set("devKey", devKey);
+    fetch("/api/usage?" + params.toString())
+      .then((res) => res.json())
+      .then((data: { usage?: UsageInfo }) => {
+        if (data.usage) setUsage(data.usage);
+      })
+      .catch(() => {
+        // 残り回数の取得に失敗しても本体機能には影響させない
+      });
+
+    return () => clearTimeout(splashTimer);
+  }, []);
 
   const scrollTop = useCallback(() => {
     setTimeout(() => {
@@ -398,7 +458,7 @@ export default function HomePage() {
         const res = await fetch("/api/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ images, deviceId: getDeviceId() }),
+          body: JSON.stringify({ images, deviceId: getDeviceId(), devKey: getDeveloperKey() }),
         });
         const data: ScanResult = await res.json();
 
@@ -408,6 +468,7 @@ export default function HomePage() {
         stopLoadingAnim();
         setStagedImages([]);
         setResult(data);
+        if (data.usage) setUsage(data.usage);
         setPhase(!data.success ? "result-error" : data.single ? "result-single" : "result-candidates");
         scrollTop();
       } catch (err) {
@@ -472,6 +533,31 @@ export default function HomePage() {
 
   return (
     <div id="app-root">
+      {showSplash && (
+        <div className="splash-screen" aria-hidden="true">
+          <svg className="splash-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M60,60 L130,110 L200,40 L270,110 L340,60 L400,190 L200,460 L0,190 Z"
+              fill="white"
+              stroke="black"
+              strokeWidth="14"
+              strokeLinejoin="round"
+            />
+            <circle cx="200" cy="230" r="95" fill="black" />
+            <circle cx="200" cy="230" r="76" fill="white" />
+            <g fill="black">
+              <path d="M200,230 L200,160 A70,70 0 0,1 260,195 Z" />
+              <path d="M200,230 L260,195 A70,70 0 0,1 260,265 Z" />
+              <path d="M200,230 L260,265 A70,70 0 0,1 200,300 Z" />
+              <path d="M200,230 L200,300 A70,70 0 0,1 140,265 Z" />
+              <path d="M200,230 L140,265 A70,70 0 0,1 140,195 Z" />
+              <path d="M200,230 L140,195 A70,70 0 0,1 200,160 Z" />
+            </g>
+            <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
+          </svg>
+          <span className="splash-text">GEMLENS</span>
+        </div>
+      )}
       <header onClick={resetToIdle} role="button" tabIndex={0}>
         <svg className="brand-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -494,6 +580,11 @@ export default function HomePage() {
           <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
         </svg>
         <span className="logo-text">GemLens</span>
+        {usage && (
+          <span className="usage-badge">
+            {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
+          </span>
+        )}
       </header>
 
       <div className="container">

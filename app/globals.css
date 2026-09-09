@@ -52,6 +52,53 @@ header .logo-text {
   transform: skewX(-6deg);
   display: inline-block;
 }
+.usage-badge {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #ccc;
+  background: rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 5px 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--black);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  animation: splashFadeOut 0.35s ease forwards;
+  animation-delay: 0.75s;
+}
+.splash-mark {
+  width: 64px;
+  height: 77px;
+  animation: splashPop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+.splash-text {
+  font-family: var(--font-archivo-black), 'Helvetica Neue', sans-serif;
+  color: white;
+  font-size: 22px;
+  letter-spacing: 2px;
+  font-style: italic;
+  transform: skewX(-6deg);
+}
+@keyframes splashPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes splashFadeOut {
+  from { opacity: 1; visibility: visible; }
+  to   { opacity: 0; visibility: hidden; }
+}
 
 .container {
   flex: 1;
