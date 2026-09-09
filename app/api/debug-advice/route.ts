@@ -1,29 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callGeminiAdvice } from "@/lib/gemini";
-import { loadBrandEntries } from "@/lib/brands";
-import { norm } from "@/lib/matching";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const brand = req.nextUrl.searchParams.get("brand") || "A BATHING APE";
-  const t0 = Date.now();
+  const key = process.env.GEMINI_API_KEY;
 
-  const brandEntries = await loadBrandEntries();
-  const t1 = Date.now();
+  const prompt = `「${brand}」について、古着店スタッフ向けに以下をJSON形式のみで返してください。{"popularItems":"人気アイテム3個","marketValue":"アイテム名：安め1000円／平均2000円／高値3000円"}`;
 
-  const normGemini = norm(brand);
-  const matched = brandEntries.filter((e) => norm(e.brandName) === normGemini);
-  const entry = matched[0];
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
+    tools: [{ google_search: {} }],
+  };
 
-  const marketInfo = entry ? await callGeminiAdvice(entry.brandName) : null;
-  const t2 = Date.now();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
-  return NextResponse.json({
-    brand,
-    matchedEntry: entry ? { brandName: entry.brandName, kana: entry.kana } : null,
-    marketInfo,
-    timingMs: { loadBrandEntries: t1 - t0, callGeminiAdvice: t2 - t1, total: t2 - t0 },
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    return NextResponse.json({
+      keyPresent: !!key,
+      keyLength: key?.length ?? 0,
+      httpStatus: res.status,
+      httpOk: res.ok,
+      bodyPreview: text.slice(0, 1500),
+    });
+  } catch (e) {
+    return NextResponse.json({
+      keyPresent: !!key,
+      keyLength: key?.length ?? 0,
+      threw: true,
+      error: String(e),
+    });
+  }
 }
