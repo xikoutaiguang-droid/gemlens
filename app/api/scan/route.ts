@@ -74,6 +74,7 @@ interface CandidateResult {
 interface ScanResult {
   success: boolean;
   single?: boolean;
+  unregistered?: boolean;
   brandName?: string;
   kana?: string;
   rank?: string;
@@ -95,10 +96,15 @@ function buildResult(geminiResult: GeminiVisionResult, brandEntries: BrandEntry[
 
   if (!geminiName) {
     if (geminiResult.guessedBrand) {
+      // データベースには登録されていないが、AIがロゴ・タグデザインから推定できたブランド。
+      // ランク・かな・備考はDB由来のため用意できないが、相場情報はブランド名さえあれば
+      // 別途Gemini経由で取得できるため、失敗扱いにせず「未登録ブランド」として結果を返す。
       return {
-        success: false,
-        guessedBrand: geminiResult.guessedBrand,
-        message: `データベースには未登録のブランドですが、AIは「${geminiResult.guessedBrand}」の可能性が高いと判定しました。データベースへの追加をご検討ください。`,
+        success: true,
+        single: true,
+        unregistered: true,
+        brandName: geminiResult.guessedBrand,
+        confirmReason: "AI推定（データベース未登録）",
         debugText,
       };
     }

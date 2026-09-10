@@ -43,6 +43,7 @@ interface UsageInfo {
 interface ScanResult {
   success: boolean;
   single?: boolean;
+  unregistered?: boolean;
   brandName?: string;
   kana?: string;
   info?: string;
@@ -660,6 +661,11 @@ export default function HomePage() {
                   +
                 </button>
               </div>
+              {result.unregistered && (
+                <div className="unregistered-notice">
+                  未登録ブランド（AI推定） — データベース未登録のためランク・備考はありません。相場情報はAIによる推定です。
+                </div>
+              )}
               <MarketSection info={result.marketInfo} />
               <div className="section-divider" />
               <div className="info-section">

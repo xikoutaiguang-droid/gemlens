@@ -201,6 +201,12 @@ header .logo-text {
 
 .section-divider { width: 100%; height: 2px; background: var(--black); margin: 14px 0; }
 
+.unregistered-notice {
+  width: 100%; font-size: 11px; line-height: 1.6; color: var(--red);
+  border: 2px solid var(--red); border-radius: 2px; padding: 10px 12px;
+  margin-bottom: 14px; font-weight: 600;
+}
+
 .info-section { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .info-label { font-size: 10px; color: var(--black); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; border-left: 3px solid var(--red); padding-left: 6px; }
 .info-value { font-size: clamp(12px, 2vw, 14px); color: #333; line-height: 1.7; }
