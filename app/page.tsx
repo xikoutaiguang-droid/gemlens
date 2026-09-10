@@ -647,6 +647,14 @@ export default function HomePage() {
                   <div id="disp-brand">{result.brandName}</div>
                   <div id="disp-kana">{result.kana}</div>
                 </div>
+                <button
+                  className="btn-add-history-inline"
+                  title="仕入れ記録に追加"
+                  aria-label="仕入れ記録に追加"
+                  onClick={() => openAddToHistory({ brandName: result.brandName!, kana: result.kana })}
+                >
+                  +
+                </button>
               </div>
               <div className="section-divider" />
               <MarketSection info={result.marketInfo} />
@@ -655,12 +663,6 @@ export default function HomePage() {
                 <div className="info-label">備考</div>
                 <div className="info-value">{result.info || "—"}</div>
               </div>
-              <button
-                className="btn btn-add-history"
-                onClick={() => openAddToHistory({ brandName: result.brandName!, kana: result.kana })}
-              >
-                仕入れ記録に追加
-              </button>
             </div>
           )}
 
@@ -759,6 +761,14 @@ export default function HomePage() {
                 <div id="modal-brand">{modalCandidate.brandName}</div>
                 <div id="modal-kana">{modalCandidate.kana || ""}</div>
               </div>
+              <button
+                className="btn-add-history-inline"
+                title="仕入れ記録に追加"
+                aria-label="仕入れ記録に追加"
+                onClick={() => openAddToHistory({ brandName: modalCandidate.brandName, kana: modalCandidate.kana })}
+              >
+                +
+              </button>
               <button className="modal-close" onClick={() => setModalCandidate(null)}>
                 ×
               </button>
@@ -770,12 +780,6 @@ export default function HomePage() {
               <div className="modal-label">備考</div>
               <div className="modal-value">{modalCandidate.info || "—"}</div>
             </div>
-            <button
-              className="btn btn-add-history"
-              onClick={() => openAddToHistory({ brandName: modalCandidate.brandName, kana: modalCandidate.kana })}
-            >
-              仕入れ記録に追加
-            </button>
           </div>
         </div>
       )}
