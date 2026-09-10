@@ -11,6 +11,7 @@ interface StagedImage {
 interface UploadResult {
   success: boolean;
   saved: number;
+  skipped: number;
   total: number;
   errors: string[];
 }
@@ -19,6 +20,7 @@ export default function ReferenceImagesAdminPage() {
   const [devKey, setDevKey] = useState<string | undefined>(undefined);
   const [brandName, setBrandName] = useState("");
   const [staged, setStaged] = useState<StagedImage[]>([]);
+  const [urlText, setUrlText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,13 @@ export default function ReferenceImagesAdminPage() {
   }
 
   async function handleSubmit() {
-    if (!brandName.trim() || staged.length === 0) {
-      setError("ブランド名と画像を入力してください");
+    const imageUrls = urlText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (!brandName.trim() || (staged.length === 0 && imageUrls.length === 0)) {
+      setError("ブランド名と、画像ファイルまたはURLのいずれかを入力してください");
       return;
     }
     setSubmitting(true);
@@ -48,12 +55,13 @@ export default function ReferenceImagesAdminPage() {
       const res = await fetch("/api/admin/reference-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ devKey, brandName: brandName.trim(), images }),
+        body: JSON.stringify({ devKey, brandName: brandName.trim(), images, imageUrls }),
       });
       const data = (await res.json()) as UploadResult;
       setResult(data);
       if (data.success) {
         setStaged([]);
+        setUrlText("");
         setBrandName("");
       }
     } catch {
@@ -113,6 +121,28 @@ export default function ReferenceImagesAdminPage() {
         </div>
       )}
 
+      <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+        画像URL（1行に1つ。メルカリ・ヤフオク等の商品画像URLを貼り付け）
+      </label>
+      <textarea
+        value={urlText}
+        onChange={(e) => setUrlText(e.target.value)}
+        placeholder={"https://example.com/photo1.jpg\nhttps://example.com/photo2.jpg"}
+        rows={5}
+        style={{
+          width: "100%",
+          padding: 10,
+          fontSize: 13,
+          border: "2px solid #0a0a0a",
+          marginBottom: 8,
+          fontFamily: "monospace",
+          resize: "vertical",
+        }}
+      />
+      <p style={{ fontSize: 11, color: "#6b6b6b", marginBottom: 20 }}>
+        URLで指定した画像は、保存前にAIが「本当にこのブランドのタグか」を自動確認します（無関係な画像はスキップされます）。
+      </p>
+
       <button
         onClick={handleSubmit}
         disabled={submitting}
@@ -137,6 +167,7 @@ export default function ReferenceImagesAdminPage() {
         <div style={{ marginTop: 16, fontSize: 14 }}>
           <p>
             {result.saved} / {result.total} 件を登録しました。
+            {result.skipped > 0 && `（${result.skipped}件はAI確認で無関係と判定されスキップ）`}
           </p>
           {result.errors.length > 0 && (
             <ul style={{ color: "#E31E24" }}>

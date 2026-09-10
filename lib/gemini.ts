@@ -301,3 +301,34 @@ async function callGeminiAdviceInternal(brandName: string, useGrounding: boolean
     return null;
   }
 }
+
+// URL経由で収集した参照画像候補が、本当に指定ブランドのタグ・ロゴが写っているかを確認する。
+// 人物写真・無関係な商品・広告バナーなど明らかに無関係な画像を弾くための簡易フィルタ。
+export async function verifyBrandTagImage(brandName: string, base64Image: string): Promise<boolean> {
+  try {
+    const prompt = [
+      `この画像は「${brandName}」というアパレルブランドのタグ・ラベル・ロゴ・エンブレムが`,
+      "はっきり写っている写真ですか？",
+      "人物のスナップ写真、風景、他ブランドの商品、通販サイトのバナー・広告画像、",
+      "無関係なイラストなどの場合は「いいえ」と答えてください。",
+      "「はい」か「いいえ」のみで、余計な説明なしに答えてください。",
+    ].join("");
+
+    const response = await fetch(geminiUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [...imagesToParts([base64Image]), { text: prompt }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 10, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+
+    if (!response.ok) return false;
+    const json = (await response.json()) as GeminiApiResponse;
+    const text = extractText(json) ?? "";
+    return text.includes("はい");
+  } catch (e) {
+    console.error("[verifyBrandTagImage] 例外:", e);
+    return false;
+  }
+}
