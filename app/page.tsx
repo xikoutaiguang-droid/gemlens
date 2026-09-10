@@ -340,9 +340,8 @@ export default function HomePage() {
 
     const splashTimer = setTimeout(() => setShowSplash(false), 2600);
 
-    const deviceId = getDeviceId();
     const devKey = getDeveloperKey();
-    const params = new URLSearchParams({ deviceId });
+    const params = new URLSearchParams();
     if (devKey) params.set("devKey", devKey);
     fetch("/api/usage?" + params.toString())
       .then((res) => res.json())

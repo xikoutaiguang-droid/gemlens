@@ -5,6 +5,7 @@ import { readBrandTextFromImage, guessBrandFromLogo, callGeminiAdvice, type Logo
 import { matchBrandName, matchByKeywords, norm, type BrandEntry } from "@/lib/matching";
 import { isProUser } from "@/lib/pro";
 import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
+import { getClientIp } from "@/lib/requestIp";
 import { embedImage } from "@/lib/embeddings";
 import { queryReferenceImages } from "@/lib/vectorStore";
 
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
     }
     const base64Images: string[] = rawImages.slice(0, 3);
 
-    const usage = await checkAndIncrementUsage(deviceId, devKey);
+    const usage = await checkAndIncrementUsage(getClientIp(req), devKey);
     if (!usage.allowed) {
       return NextResponse.json({
         success: false,
