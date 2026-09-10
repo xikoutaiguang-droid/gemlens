@@ -1,7 +1,10 @@
 // クライアント側（ブラウザ）専用の共通ユーティリティ。
 // メイン画面（app/page.tsx）と管理画面（app/admin/reference-images/page.tsx）の両方から使用する。
 
+import { generateAccountCode, normalizeAccountCode } from "./accountCode";
+
 const DEV_KEY_STORAGE = "gemlens_dev_key";
+const ACCOUNT_CODE_STORAGE = "gemlens_account_code";
 
 export function activateDeveloperKeyFromUrl(): void {
   try {
@@ -45,6 +48,41 @@ export function resizeAndCompress(source: CanvasImageSource, srcW: number, srcH:
   canvas.height = h;
   canvas.getContext("2d")!.drawImage(source, 0, 0, w, h);
   return canvas.toDataURL("image/jpeg", 0.8);
+}
+
+// ------------------------------------------------------------
+//  履歴機能の復元コード（メール等の認証を使わず、端末間の引き継ぎ用に
+//  ランダムなコードをlocalStorageに保存する。初回使用時に自動生成される）
+// ------------------------------------------------------------
+export function getAccountCode(): string | undefined {
+  try {
+    return localStorage.getItem(ACCOUNT_CODE_STORAGE) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function getOrCreateAccountCode(): string {
+  const existing = getAccountCode();
+  if (existing) return existing;
+
+  const code = generateAccountCode();
+  try {
+    localStorage.setItem(ACCOUNT_CODE_STORAGE, code);
+  } catch {
+    // 保存できなくても、この場では一時的なコードとして使い続ける
+  }
+  return code;
+}
+
+export function setAccountCode(code: string): string {
+  const normalized = normalizeAccountCode(code);
+  try {
+    localStorage.setItem(ACCOUNT_CODE_STORAGE, normalized);
+  } catch {
+    // ignore
+  }
+  return normalized;
 }
 
 export function compressImageFile(file: File): Promise<string> {

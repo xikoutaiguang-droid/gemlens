@@ -52,8 +52,8 @@ header .logo-text {
   transform: skewX(-6deg);
   display: inline-block;
 }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .usage-badge {
-  margin-left: auto;
   font-size: 10px;
   letter-spacing: 0.5px;
   font-weight: 700;
@@ -64,6 +64,19 @@ header .logo-text {
   flex-shrink: 0;
   white-space: nowrap;
 }
+.history-link {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: white;
+  background: rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+.history-link:active { background: rgba(255,255,255,0.24); }
 
 .splash-screen {
   position: fixed;
@@ -269,7 +282,7 @@ header .logo-text {
   align-items: flex-end; justify-content: center;
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
-#modal-box {
+#modal-box, .sheet-box {
   background: white; border-radius: 0; border-top: 3px solid var(--black);
   width: 100%; padding: 28px 24px 36px;
   display: flex; flex-direction: column; gap: 16px;
@@ -384,4 +397,71 @@ input[type="file"] { display: none; }
 .camera-error button {
   background: var(--red); color: #fff; border: none; border-radius: 4px;
   padding: 11px 20px; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+
+/* ============================================================
+   履歴・仕入・利益記録機能
+   ============================================================ */
+.btn-add-history {
+  width: 100%; margin-top: 10px; background: white; color: var(--black);
+}
+
+.history-summary {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  padding-bottom: 14px; border-bottom: 2px solid var(--black); margin-bottom: 14px;
+}
+.history-summary-item { display: flex; flex-direction: column; gap: 2px; }
+.history-summary-label { font-size: 9px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+.history-summary-value { font-size: clamp(13px, 2.4vw, 17px); font-weight: 700; color: var(--black); }
+.history-summary-value.profit { color: var(--red); }
+
+.status-badge {
+  font-size: 10px; letter-spacing: 0.5px; font-weight: 700; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+}
+.status-instock { background: #eee; color: var(--gray); }
+.status-sold { background: var(--red); color: white; }
+.history-price { font-size: clamp(11px, 2vw, 13px); color: var(--gray); margin-top: 2px; }
+.history-profit { font-weight: 700; color: var(--red); }
+
+.field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.field-label { font-size: 10px; color: var(--black); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
+.field-input, .field-textarea {
+  width: 100%; padding: 12px; font-size: 15px; border: 2px solid var(--black);
+  border-radius: 2px; font-family: inherit; background: white; color: var(--black);
+}
+.field-textarea { resize: vertical; min-height: 60px; }
+
+.btn-delete { background: white; color: var(--red); border-color: var(--red); }
+
+.history-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 60px 20px; text-align: center; color: var(--gray);
+  font-size: 13px; line-height: 1.7;
+}
+
+.history-settings {
+  margin-top: 24px; padding-top: 16px; border-top: 2px solid #eee;
+}
+.history-settings summary {
+  font-size: 11px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase;
+  font-weight: 700; cursor: pointer;
+}
+.account-code-box {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 12px; padding: 12px; background: #fafafa; border: 2px solid var(--black);
+}
+.account-code-value { font-family: monospace; font-size: 14px; font-weight: 700; letter-spacing: 1px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--black); color: white; font-size: 13px; font-weight: 700;
+  padding: 12px 20px; border-radius: 4px; z-index: 400;
+  animation: toastFade 2s ease forwards;
+}
+@keyframes toastFade {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
 }

@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { getRedis } from "./redisClient";
 
 // ------------------------------------------------------------
 //  1日あたりの無料利用回数の上限（端末単位）
@@ -11,13 +11,6 @@ export interface UsageResult {
   count: number;
   limit: number;
   isDeveloper: boolean;
-}
-
-function getRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null; // Redis.fromEnv()は未設定でも例外を投げず壊れたクライアントを返すため、事前に判定する
-  return new Redis({ url, token });
 }
 
 function todayJst(): string {

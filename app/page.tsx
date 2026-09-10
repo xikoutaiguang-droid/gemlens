@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   activateDeveloperKeyFromUrl,
   compressImageFile,
   getDeveloperKey,
+  getOrCreateAccountCode,
   resizeAndCompress,
 } from "../lib/clientUtils";
 
@@ -317,6 +319,11 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showSplash, setShowSplash] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
+  const [historyPurchaseInput, setHistoryPurchaseInput] = useState("");
+  const [historySubmitting, setHistorySubmitting] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -468,6 +475,49 @@ export default function HomePage() {
     if (lastImagesRef.current) runScan(lastImagesRef.current);
   }, [runScan]);
 
+  const openAddToHistory = useCallback((target: { brandName: string; kana?: string }) => {
+    setModalCandidate(null);
+    setHistoryPurchaseInput("");
+    setHistoryError("");
+    setAddHistoryTarget(target);
+  }, []);
+
+  const submitAddToHistory = useCallback(
+    async (skipPrice: boolean) => {
+      if (!addHistoryTarget) return;
+      setHistorySubmitting(true);
+      setHistoryError("");
+      try {
+        const accountCode = getOrCreateAccountCode();
+        const trimmed = historyPurchaseInput.trim();
+        const purchasePrice = !skipPrice && trimmed ? Number(trimmed) : undefined;
+        const res = await fetch("/api/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accountCode,
+            brandName: addHistoryTarget.brandName,
+            kana: addHistoryTarget.kana,
+            purchasePrice,
+          }),
+        });
+        const data = (await res.json()) as { success: boolean; message?: string };
+        if (!data.success) {
+          setHistoryError(data.message || "保存に失敗しました");
+          return;
+        }
+        setAddHistoryTarget(null);
+        setToastMessage("仕入れ記録に追加しました");
+        setTimeout(() => setToastMessage(null), 2000);
+      } catch {
+        setHistoryError("送信中にエラーが発生しました");
+      } finally {
+        setHistorySubmitting(false);
+      }
+    },
+    [addHistoryTarget, historyPurchaseInput]
+  );
+
   const canAddMore = stagedImages.length < MAX_IMAGES;
   const debugText = result?.debugText;
 
@@ -520,11 +570,16 @@ export default function HomePage() {
           <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
         </svg>
         <span className="logo-text">GemLens</span>
-        {usage && (
-          <span className="usage-badge">
-            {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
-          </span>
-        )}
+        <div className="header-right">
+          <Link href="/history" className="history-link" onClick={(e) => e.stopPropagation()}>
+            履歴
+          </Link>
+          {usage && (
+            <span className="usage-badge">
+              {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
+            </span>
+          )}
+        </div>
       </header>
 
       <div className="container">
@@ -600,6 +655,12 @@ export default function HomePage() {
                 <div className="info-label">備考</div>
                 <div className="info-value">{result.info || "—"}</div>
               </div>
+              <button
+                className="btn btn-add-history"
+                onClick={() => openAddToHistory({ brandName: result.brandName!, kana: result.kana })}
+              >
+                仕入れ記録に追加
+              </button>
             </div>
           )}
 
@@ -709,9 +770,69 @@ export default function HomePage() {
               <div className="modal-label">備考</div>
               <div className="modal-value">{modalCandidate.info || "—"}</div>
             </div>
+            <button
+              className="btn btn-add-history"
+              onClick={() => openAddToHistory({ brandName: modalCandidate.brandName, kana: modalCandidate.kana })}
+            >
+              仕入れ記録に追加
+            </button>
           </div>
         </div>
       )}
+
+      {addHistoryTarget && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && !historySubmitting && setAddHistoryTarget(null)}
+        >
+          <div className="sheet-box">
+            <div className="modal-header">
+              <div className="modal-names">
+                <div id="modal-brand">{addHistoryTarget.brandName}</div>
+                <div id="modal-kana">{addHistoryTarget.kana || ""}</div>
+              </div>
+              <button className="modal-close" onClick={() => setAddHistoryTarget(null)} disabled={historySubmitting}>
+                ×
+              </button>
+            </div>
+            <div className="modal-divider" />
+            <div className="field">
+              <label className="field-label" htmlFor="history-purchase-price">
+                仕入れ値（円・任意）
+              </label>
+              <input
+                id="history-purchase-price"
+                className="field-input"
+                type="number"
+                inputMode="numeric"
+                placeholder="例: 3000"
+                value={historyPurchaseInput}
+                onChange={(e) => setHistoryPurchaseInput(e.target.value)}
+                disabled={historySubmitting}
+              />
+            </div>
+            {historyError && <div style={{ color: "var(--red)", fontSize: 12 }}>{historyError}</div>}
+            <div className="btn-panel">
+              <button
+                className="btn btn-gallery"
+                onClick={() => submitAddToHistory(true)}
+                disabled={historySubmitting}
+              >
+                スキップして追加
+              </button>
+              <button
+                className="btn btn-camera"
+                onClick={() => submitAddToHistory(false)}
+                disabled={historySubmitting}
+              >
+                この価格で追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && <div className="toast">{toastMessage}</div>}
 
       {cameraOpen && (
         <CameraOverlay
