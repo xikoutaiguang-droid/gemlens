@@ -92,7 +92,13 @@ export default function ReferenceImagesAdminPage() {
       />
 
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>タグ写真（複数選択可）</label>
-      <input type="file" accept="image/*" multiple onChange={handleFilesSelected} style={{ marginBottom: 16 }} />
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFilesSelected}
+        style={{ display: "block", marginBottom: 16 }}
+      />
 
       {staged.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
