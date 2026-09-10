@@ -590,10 +590,15 @@ export default function HomePage() {
         <div className="result-panel" ref={resultPanelRef}>
           {phase === "idle" && (
             <div id="idle-msg">
-              <div className="idle-arrow" />
+              <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
+                <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
+                <polyline points="4,18 12,26 20,18" stroke="var(--red)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               <div className="idle-text">Scan a tag to identify the brand</div>
               <div className="idle-note">
-                &#8505;&#65039; このアプリはVercelでホストされた通常のWebアプリです。安心してご利用ください。
+                Vercelでホストされた通常のWebアプリです。安心してご利用ください。
+                <br />
+                文字のない記号・ロゴのみのタグは、複数枚撮影すると判定精度が上がります。
               </div>
             </div>
           )}

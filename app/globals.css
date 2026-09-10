@@ -142,13 +142,7 @@ header .logo-text {
   justify-content: center; gap: 14px;
   flex: 1; width: 100%;
 }
-.idle-arrow {
-  width: 24px; height: 24px;
-  border-right: 2px solid var(--red);
-  border-bottom: 2px solid var(--red);
-  transform: rotate(45deg);
-  margin-bottom: 6px;
-}
+.idle-arrow { margin-bottom: 6px; }
 #idle-msg .idle-text { font-size: 13px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
 #idle-msg .idle-note { font-size: 10px; color: #aaa; letter-spacing: 0.3px; text-transform: none; font-weight: 400; margin-top: 12px; max-width: 260px; line-height: 1.6; text-align: center; }
 
