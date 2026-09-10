@@ -7,6 +7,7 @@ import {
   compressImageFile,
   getDeveloperKey,
   getOrCreateAccountCode,
+  ITEM_CATEGORIES,
   resizeAndCompress,
 } from "../lib/clientUtils";
 
@@ -320,6 +321,7 @@ export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
+  const [historyItemInput, setHistoryItemInput] = useState("");
   const [historyPurchaseInput, setHistoryPurchaseInput] = useState("");
   const [historySubmitting, setHistorySubmitting] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -477,6 +479,7 @@ export default function HomePage() {
 
   const openAddToHistory = useCallback((target: { brandName: string; kana?: string }) => {
     setModalCandidate(null);
+    setHistoryItemInput("");
     setHistoryPurchaseInput("");
     setHistoryError("");
     setAddHistoryTarget(target);
@@ -498,6 +501,7 @@ export default function HomePage() {
             accountCode,
             brandName: addHistoryTarget.brandName,
             kana: addHistoryTarget.kana,
+            item: historyItemInput.trim() || undefined,
             purchasePrice,
           }),
         });
@@ -515,7 +519,7 @@ export default function HomePage() {
         setHistorySubmitting(false);
       }
     },
-    [addHistoryTarget, historyPurchaseInput]
+    [addHistoryTarget, historyItemInput, historyPurchaseInput]
   );
 
   const canAddMore = stagedImages.length < MAX_IMAGES;
@@ -656,7 +660,6 @@ export default function HomePage() {
                   +
                 </button>
               </div>
-              <div className="section-divider" />
               <MarketSection info={result.marketInfo} />
               <div className="section-divider" />
               <div className="info-section">
@@ -800,6 +803,26 @@ export default function HomePage() {
               </button>
             </div>
             <div className="modal-divider" />
+            <div className="field">
+              <label className="field-label" htmlFor="history-item">
+                アイテム（任意）
+              </label>
+              <input
+                id="history-item"
+                className="field-input"
+                type="text"
+                list="item-categories"
+                placeholder="例: リング"
+                value={historyItemInput}
+                onChange={(e) => setHistoryItemInput(e.target.value)}
+                disabled={historySubmitting}
+              />
+              <datalist id="item-categories">
+                {ITEM_CATEGORIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
             <div className="field">
               <label className="field-label" htmlFor="history-purchase-price">
                 仕入れ値（円・任意）

@@ -6,6 +6,20 @@ import { generateAccountCode, normalizeAccountCode } from "./accountCode";
 const DEV_KEY_STORAGE = "gemlens_dev_key";
 const ACCOUNT_CODE_STORAGE = "gemlens_account_code";
 
+// 仕入れ記録の「アイテム」欄で選択候補として表示するカテゴリ一覧（<datalist>用）。
+// 選択肢からの選択・自由入力のどちらも可能にするため<select>ではなくdatalistを使う。
+export const ITEM_CATEGORIES = [
+  "リング",
+  "ネックレス",
+  "ブレスレット",
+  "財布",
+  "バッグ",
+  "アパレル",
+  "シューズ",
+  "アクセサリー",
+  "その他",
+];
+
 export function activateDeveloperKeyFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);

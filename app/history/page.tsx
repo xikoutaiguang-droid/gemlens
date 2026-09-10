@@ -2,22 +2,34 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { getOrCreateAccountCode, setAccountCode as persistAccountCode } from "../../lib/clientUtils";
+import { getOrCreateAccountCode, ITEM_CATEGORIES, setAccountCode as persistAccountCode } from "../../lib/clientUtils";
 import { formatAccountCodeForDisplay, isValidAccountCode, normalizeAccountCode } from "../../lib/accountCode";
 
 interface HistoryRecord {
   id: string;
   brandName: string;
   kana?: string;
+  item?: string;
   purchasePrice?: number;
   salePrice?: number;
-  createdAt: string;
+  purchasedAt?: string;
   soldAt?: string;
+  createdAt: string;
   memo?: string;
 }
 
 function yen(n: number): string {
   return "¥" + n.toLocaleString();
+}
+
+function todayDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysBetween(fromDateStr: string, toDateStr: string): number {
+  const from = new Date(fromDateStr + "T00:00:00");
+  const to = new Date(toDateStr + "T00:00:00");
+  return Math.max(0, Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 export default function HistoryPage() {
@@ -26,8 +38,11 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
 
   const [editTarget, setEditTarget] = useState<HistoryRecord | null>(null);
+  const [editItem, setEditItem] = useState("");
   const [editPurchase, setEditPurchase] = useState("");
   const [editSale, setEditSale] = useState("");
+  const [editPurchasedAt, setEditPurchasedAt] = useState("");
+  const [editSoldAt, setEditSoldAt] = useState("");
   const [editMemo, setEditMemo] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
@@ -55,8 +70,11 @@ export default function HistoryPage() {
 
   function openEdit(record: HistoryRecord) {
     setEditTarget(record);
+    setEditItem(record.item ?? "");
     setEditPurchase(record.purchasePrice != null ? String(record.purchasePrice) : "");
     setEditSale(record.salePrice != null ? String(record.salePrice) : "");
+    setEditPurchasedAt(record.purchasedAt ?? record.createdAt.slice(0, 10));
+    setEditSoldAt(record.soldAt ?? "");
     setEditMemo(record.memo ?? "");
     setEditError("");
   }
@@ -71,8 +89,11 @@ export default function HistoryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accountCode,
+          item: editItem.trim() ? editItem.trim() : null,
           purchasePrice: editPurchase.trim() ? Number(editPurchase) : null,
           salePrice: editSale.trim() ? Number(editSale) : null,
+          purchasedAt: editPurchasedAt.trim() ? editPurchasedAt.trim() : null,
+          soldAt: editSoldAt.trim() ? editSoldAt.trim() : null,
           memo: editMemo.trim() ? editMemo.trim() : null,
         }),
       });
@@ -220,12 +241,15 @@ export default function HistoryPage() {
                   const sold = r.salePrice != null;
                   const profit =
                     r.salePrice != null && r.purchasePrice != null ? r.salePrice - r.purchasePrice : null;
+                  const purchasedAt = r.purchasedAt ?? r.createdAt.slice(0, 10);
+                  const days = daysBetween(purchasedAt, sold ? r.soldAt ?? todayDateString() : todayDateString());
                   return (
                     <div className="candidate-row" key={r.id}>
                       <div className="candidate-main" onClick={() => openEdit(r)}>
                         <div className="candidate-left">
                           <div className="candidate-brand">{r.brandName}</div>
                           <div className="candidate-kana">{r.kana || ""}</div>
+                          {r.item && <div className="history-item">{r.item}</div>}
                           {(r.purchasePrice != null || r.salePrice != null) && (
                             <div className="history-price">
                               {r.purchasePrice != null && `仕入 ${yen(r.purchasePrice)}`}
@@ -239,6 +263,7 @@ export default function HistoryPage() {
                             {sold ? "売却済" : "在庫"}
                           </span>
                           {profit != null && <div className="history-profit">+{yen(profit)}</div>}
+                          <div className="history-days">{sold ? `${days}日で売却` : `仕入れて${days}日`}</div>
                         </div>
                       </div>
                     </div>
@@ -302,6 +327,32 @@ export default function HistoryPage() {
             </div>
             <div className="modal-divider" />
             <div className="field">
+              <label className="field-label">アイテム</label>
+              <input
+                className="field-input"
+                type="text"
+                list="item-categories-edit"
+                value={editItem}
+                onChange={(e) => setEditItem(e.target.value)}
+                disabled={editSubmitting}
+              />
+              <datalist id="item-categories-edit">
+                {ITEM_CATEGORIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
+            <div className="field">
+              <label className="field-label">仕入れ日</label>
+              <input
+                className="field-input"
+                type="date"
+                value={editPurchasedAt}
+                onChange={(e) => setEditPurchasedAt(e.target.value)}
+                disabled={editSubmitting}
+              />
+            </div>
+            <div className="field">
               <label className="field-label">仕入れ値（円）</label>
               <input
                 className="field-input"
@@ -309,6 +360,16 @@ export default function HistoryPage() {
                 inputMode="numeric"
                 value={editPurchase}
                 onChange={(e) => setEditPurchase(e.target.value)}
+                disabled={editSubmitting}
+              />
+            </div>
+            <div className="field">
+              <label className="field-label">売却日</label>
+              <input
+                className="field-input"
+                type="date"
+                value={editSoldAt}
+                onChange={(e) => setEditSoldAt(e.target.value)}
                 disabled={editSubmitting}
               />
             </div>

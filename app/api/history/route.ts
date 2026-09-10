@@ -18,6 +18,7 @@ interface CreateHistoryRequest {
   accountCode?: string;
   brandName?: string;
   kana?: string;
+  item?: string;
   purchasePrice?: number;
   memo?: string;
 }
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
   const record = await createHistoryRecord(accountCode, {
     brandName,
     kana: body?.kana,
+    item: body?.item,
     purchasePrice: body?.purchasePrice,
     memo: body?.memo,
   });

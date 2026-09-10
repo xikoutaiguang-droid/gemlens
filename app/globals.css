@@ -181,6 +181,10 @@ header .logo-text {
 .single-header {
   display: flex; align-items: flex-start;
   width: 100%; min-height: 60px;
+  position: sticky; top: -24px; z-index: 5;
+  background: white;
+  margin: -24px 0 14px; padding: 24px 0 14px;
+  border-bottom: 2px solid var(--black);
 }
 .single-names { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
 #disp-brand {
@@ -294,7 +298,11 @@ header .logo-text {
   from { transform: translateY(30px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-.modal-header { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
+.modal-header {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%;
+  position: sticky; top: -28px; z-index: 5; background: white;
+  margin-top: -28px; padding-top: 28px;
+}
 .modal-names { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 #modal-brand {
   font-family: var(--font-archivo-black), 'Helvetica Neue', sans-serif;
@@ -346,6 +354,8 @@ header .logo-text {
 .btn-submit {
   width: 100%; margin-top: 10px; background: var(--red); color: white; border-color: var(--red);
 }
+/* .btn-panel（削除・保存など2列並び）の中では単独使用時のmargin/widthを打ち消し、隣のボタンと高さを揃える */
+.btn-panel .btn-submit { width: auto; margin-top: 0; }
 input[type="file"] { display: none; }
 
 /* インライン撮影パネル */
@@ -433,7 +443,9 @@ input[type="file"] { display: none; }
 .status-instock { background: #eee; color: var(--gray); }
 .status-sold { background: var(--red); color: white; }
 .history-price { font-size: clamp(11px, 2vw, 13px); color: var(--gray); margin-top: 2px; }
+.history-item { font-size: clamp(11px, 2vw, 13px); color: var(--black); font-weight: 600; margin-top: 2px; }
 .history-profit { font-weight: 700; color: var(--red); }
+.history-days { font-size: 10px; color: var(--gray); margin-top: 4px; white-space: nowrap; }
 
 .field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .field-label { font-size: 10px; color: var(--black); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
