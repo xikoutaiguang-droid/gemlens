@@ -5,6 +5,12 @@ import { readBrandTextFromImage, guessBrandFromLogo, callGeminiAdvice, type Logo
 import { matchBrandName, matchByKeywords, norm, type BrandEntry } from "@/lib/matching";
 import { isProUser } from "@/lib/pro";
 import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
+import { embedImage } from "@/lib/embeddings";
+import { queryReferenceImages } from "@/lib/vectorStore";
+
+// 画像類似検索フォールバックの採用しきい値（コサイン類似度）。
+// 手動登録した参照画像が少ないうちは厳しめにし、誤検出よりも「判定不可」を優先する。
+const VECTOR_MATCH_THRESHOLD = 0.85;
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -196,6 +202,28 @@ export async function POST(req: NextRequest) {
       if (kwMatch) {
         geminiResult = { brandName: kwMatch.brandName };
         matchSource = "keyword";
+      }
+    }
+
+    // 最終フォールバック（PRO限定）: 手動登録した参照画像との類似検索
+    // ロゴ・エンブレムのみで文字情報がほぼ無いタグ向け。参照画像が未登録のブランドには効果がない。
+    if (!geminiResult.brandName && isProUser(deviceId)) {
+      try {
+        const vector = await embedImage(base64Images[0]);
+        const matches = await queryReferenceImages(vector, 3);
+        const best = matches[0];
+        if (best) {
+          debugLines.push(`[VECTOR] ${best.brandName} (score=${best.score.toFixed(3)})`);
+          if (best.score >= VECTOR_MATCH_THRESHOLD) {
+            const vecMatch = brandEntries.find((e) => norm(e.brandName) === norm(best.brandName));
+            if (vecMatch) {
+              geminiResult = { brandName: vecMatch.brandName };
+              matchSource = "vector-similarity";
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[scan] vector search failed", e);
       }
     }
 
