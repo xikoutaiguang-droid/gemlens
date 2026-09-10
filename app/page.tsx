@@ -322,7 +322,8 @@ export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
-  const [historyItemInput, setHistoryItemInput] = useState("");
+  const [historyItemCategory, setHistoryItemCategory] = useState("");
+  const [historyItemCustom, setHistoryItemCustom] = useState("");
   const [historyPurchaseInput, setHistoryPurchaseInput] = useState("");
   const [historySubmitting, setHistorySubmitting] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -479,7 +480,8 @@ export default function HomePage() {
 
   const openAddToHistory = useCallback((target: { brandName: string; kana?: string }) => {
     setModalCandidate(null);
-    setHistoryItemInput("");
+    setHistoryItemCategory("");
+    setHistoryItemCustom("");
     setHistoryPurchaseInput("");
     setHistoryError("");
     setAddHistoryTarget(target);
@@ -494,6 +496,8 @@ export default function HomePage() {
         const accountCode = getOrCreateAccountCode();
         const trimmed = historyPurchaseInput.trim();
         const purchasePrice = !skipPrice && trimmed ? Number(trimmed) : undefined;
+        const item =
+          historyItemCategory === "その他" ? historyItemCustom.trim() : historyItemCategory || undefined;
         const res = await fetch("/api/history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -501,7 +505,7 @@ export default function HomePage() {
             accountCode,
             brandName: addHistoryTarget.brandName,
             kana: addHistoryTarget.kana,
-            item: historyItemInput.trim() || undefined,
+            item: item || undefined,
             purchasePrice,
           }),
         });
@@ -519,7 +523,7 @@ export default function HomePage() {
         setHistorySubmitting(false);
       }
     },
-    [addHistoryTarget, historyItemInput, historyPurchaseInput]
+    [addHistoryTarget, historyItemCategory, historyItemCustom, historyPurchaseInput]
   );
 
   const canAddMore = stagedImages.length < MAX_IMAGES;
@@ -817,21 +821,31 @@ export default function HomePage() {
               <label className="field-label" htmlFor="history-item">
                 アイテム（任意）
               </label>
-              <input
+              <select
                 id="history-item"
                 className="field-input"
-                type="text"
-                list="item-categories"
-                placeholder="例: リング"
-                value={historyItemInput}
-                onChange={(e) => setHistoryItemInput(e.target.value)}
+                value={historyItemCategory}
+                onChange={(e) => setHistoryItemCategory(e.target.value)}
                 disabled={historySubmitting}
-              />
-              <datalist id="item-categories">
+              >
+                <option value="">選択してください</option>
                 {ITEM_CATEGORIES.map((c) => (
-                  <option key={c} value={c} />
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
+              {historyItemCategory === "その他" && (
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="アイテム名を入力"
+                  value={historyItemCustom}
+                  onChange={(e) => setHistoryItemCustom(e.target.value)}
+                  disabled={historySubmitting}
+                  style={{ marginTop: 8 }}
+                />
+              )}
             </div>
             <div className="field">
               <label className="field-label" htmlFor="history-purchase-price">

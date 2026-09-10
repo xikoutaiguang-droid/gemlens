@@ -48,7 +48,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
 
   const [editTarget, setEditTarget] = useState<HistoryRecord | null>(null);
-  const [editItem, setEditItem] = useState("");
+  const [editItemCategory, setEditItemCategory] = useState("");
+  const [editItemCustom, setEditItemCustom] = useState("");
   const [editPurchase, setEditPurchase] = useState("");
   const [editSale, setEditSale] = useState("");
   const [editPurchasedAt, setEditPurchasedAt] = useState("");
@@ -80,7 +81,17 @@ export default function HistoryPage() {
 
   function openEdit(record: HistoryRecord) {
     setEditTarget(record);
-    setEditItem(record.item ?? "");
+    const item = record.item ?? "";
+    if (item && ITEM_CATEGORIES.includes(item) && item !== "その他") {
+      setEditItemCategory(item);
+      setEditItemCustom("");
+    } else if (item) {
+      setEditItemCategory("その他");
+      setEditItemCustom(item);
+    } else {
+      setEditItemCategory("");
+      setEditItemCustom("");
+    }
     setEditPurchase(record.purchasePrice != null ? String(record.purchasePrice) : "");
     setEditSale(record.salePrice != null ? String(record.salePrice) : "");
     setEditPurchasedAt(toDateOnly(record.purchasedAt ?? record.createdAt));
@@ -94,12 +105,13 @@ export default function HistoryPage() {
     setEditSubmitting(true);
     setEditError("");
     try {
+      const item = editItemCategory === "その他" ? editItemCustom.trim() : editItemCategory;
       const res = await fetch(`/api/history/${editTarget.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accountCode,
-          item: editItem.trim() ? editItem.trim() : null,
+          item: item ? item : null,
           purchasePrice: editPurchase.trim() ? Number(editPurchase) : null,
           salePrice: editSale.trim() ? Number(editSale) : null,
           purchasedAt: editPurchasedAt.trim() ? editPurchasedAt.trim() : null,
@@ -340,19 +352,30 @@ export default function HistoryPage() {
             <div className="modal-divider" />
             <div className="field">
               <label className="field-label">アイテム</label>
-              <input
+              <select
                 className="field-input"
-                type="text"
-                list="item-categories-edit"
-                value={editItem}
-                onChange={(e) => setEditItem(e.target.value)}
+                value={editItemCategory}
+                onChange={(e) => setEditItemCategory(e.target.value)}
                 disabled={editSubmitting}
-              />
-              <datalist id="item-categories-edit">
+              >
+                <option value="">選択してください</option>
                 {ITEM_CATEGORIES.map((c) => (
-                  <option key={c} value={c} />
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </datalist>
+              </select>
+              {editItemCategory === "その他" && (
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="アイテム名を入力"
+                  value={editItemCustom}
+                  onChange={(e) => setEditItemCustom(e.target.value)}
+                  disabled={editSubmitting}
+                  style={{ marginTop: 8 }}
+                />
+              )}
             </div>
             <div className="field">
               <label className="field-label">仕入れ日</label>
