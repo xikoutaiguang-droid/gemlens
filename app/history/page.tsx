@@ -26,9 +26,19 @@ function todayDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// 過去（機能追加以前）の記録はsoldAtが完全なISO日時文字列の場合があるため、
+// 先頭10文字（YYYY-MM-DD）だけを見て両形式に対応する。
+function toDateOnly(dateStr: string): string {
+  return dateStr.slice(0, 10);
+}
+
+function formatDate(dateStr: string): string {
+  return toDateOnly(dateStr).replace(/-/g, "/");
+}
+
 function daysBetween(fromDateStr: string, toDateStr: string): number {
-  const from = new Date(fromDateStr + "T00:00:00");
-  const to = new Date(toDateStr + "T00:00:00");
+  const from = new Date(toDateOnly(fromDateStr) + "T00:00:00");
+  const to = new Date(toDateOnly(toDateStr) + "T00:00:00");
   return Math.max(0, Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
@@ -73,8 +83,8 @@ export default function HistoryPage() {
     setEditItem(record.item ?? "");
     setEditPurchase(record.purchasePrice != null ? String(record.purchasePrice) : "");
     setEditSale(record.salePrice != null ? String(record.salePrice) : "");
-    setEditPurchasedAt(record.purchasedAt ?? record.createdAt.slice(0, 10));
-    setEditSoldAt(record.soldAt ?? "");
+    setEditPurchasedAt(toDateOnly(record.purchasedAt ?? record.createdAt));
+    setEditSoldAt(record.soldAt ? toDateOnly(record.soldAt) : "");
     setEditMemo(record.memo ?? "");
     setEditError("");
   }
@@ -241,7 +251,7 @@ export default function HistoryPage() {
                   const sold = r.salePrice != null;
                   const profit =
                     r.salePrice != null && r.purchasePrice != null ? r.salePrice - r.purchasePrice : null;
-                  const purchasedAt = r.purchasedAt ?? r.createdAt.slice(0, 10);
+                  const purchasedAt = toDateOnly(r.purchasedAt ?? r.createdAt);
                   const days = daysBetween(purchasedAt, sold ? r.soldAt ?? todayDateString() : todayDateString());
                   return (
                     <div className="candidate-row" key={r.id}>
@@ -250,11 +260,13 @@ export default function HistoryPage() {
                           <div className="candidate-brand">{r.brandName}</div>
                           <div className="candidate-kana">{r.kana || ""}</div>
                           {r.item && <div className="history-item">{r.item}</div>}
-                          {(r.purchasePrice != null || r.salePrice != null) && (
+                          <div className="history-price">
+                            仕入 {r.purchasePrice != null ? yen(r.purchasePrice) : "—"}（{formatDate(purchasedAt)}）
+                          </div>
+                          {sold && (
                             <div className="history-price">
-                              {r.purchasePrice != null && `仕入 ${yen(r.purchasePrice)}`}
-                              {r.purchasePrice != null && r.salePrice != null && "　"}
-                              {r.salePrice != null && `売却 ${yen(r.salePrice)}`}
+                              売却 {yen(r.salePrice!)}
+                              {r.soldAt && `（${formatDate(r.soldAt)}）`}
                             </div>
                           )}
                         </div>
