@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { getOrCreateAccountCode, ITEM_CATEGORIES, setAccountCode as persistAccountCode } from "../../lib/clientUtils";
+import {
+  getOrCreateAccountCode,
+  getStaleThresholdDays,
+  ITEM_CATEGORIES,
+  setAccountCode as persistAccountCode,
+  setStaleThresholdDays,
+} from "../../lib/clientUtils";
 import { formatAccountCodeForDisplay, isValidAccountCode, normalizeAccountCode } from "../../lib/accountCode";
 
 interface HistoryRecord {
@@ -62,6 +68,9 @@ export default function HistoryPage() {
   const [restoreError, setRestoreError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
 
+  const [staleThreshold, setStaleThreshold] = useState(60);
+  const [staleThresholdInput, setStaleThresholdInput] = useState("60");
+
   const loadHistory = useCallback(async (code: string) => {
     setLoading(true);
     try {
@@ -77,7 +86,19 @@ export default function HistoryPage() {
     const code = getOrCreateAccountCode();
     setAccountCodeState(code);
     loadHistory(code);
+    const threshold = getStaleThresholdDays();
+    setStaleThreshold(threshold);
+    setStaleThresholdInput(String(threshold));
   }, [loadHistory]);
+
+  function handleStaleThresholdChange(value: string) {
+    setStaleThresholdInput(value);
+    const n = parseInt(value, 10);
+    if (Number.isFinite(n) && n > 0) {
+      setStaleThreshold(n);
+      setStaleThresholdDays(n);
+    }
+  }
 
   function openEdit(record: HistoryRecord) {
     setEditTarget(record);
@@ -190,6 +211,59 @@ export default function HistoryPage() {
     }
   }
 
+  function toCsvField(value: string): string {
+    if (/[",\n]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  }
+
+  function exportCsv() {
+    const headers = [
+      "ブランド名",
+      "かな",
+      "アイテム",
+      "仕入れ日",
+      "仕入れ値",
+      "売却日",
+      "売却値",
+      "利益",
+      "ステータス",
+      "メモ",
+    ];
+    const rows = records.map((r) => {
+      const sold = r.salePrice != null;
+      const purchasedAt = formatDate(r.purchasedAt ?? r.createdAt);
+      const profit = sold && r.purchasePrice != null ? r.salePrice! - r.purchasePrice : null;
+      return [
+        r.brandName,
+        r.kana ?? "",
+        r.item ?? "",
+        purchasedAt,
+        r.purchasePrice != null ? String(r.purchasePrice) : "",
+        r.soldAt ? formatDate(r.soldAt) : "",
+        r.salePrice != null ? String(r.salePrice) : "",
+        profit != null ? String(profit) : "",
+        sold ? "売却済" : "在庫",
+        r.memo ?? "",
+      ]
+        .map(toCsvField)
+        .join(",");
+    });
+    // ExcelでUTF-8を正しく認識させるためBOMを付与する
+    const BOM = "﻿";
+    const csv = BOM + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gemlens_history_${todayDateString()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   const soldRecords = records.filter((r) => r.salePrice != null);
   const inStockCount = records.length - soldRecords.length;
   const totalProfit = soldRecords.reduce((sum, r) => {
@@ -240,6 +314,9 @@ export default function HistoryPage() {
             </div>
           ) : (
             <>
+              <button className="csv-export-btn" onClick={exportCsv}>
+                CSVエクスポート
+              </button>
               <div className="history-summary">
                 <div className="history-summary-item">
                   <div className="history-summary-label">合計</div>
@@ -265,8 +342,9 @@ export default function HistoryPage() {
                     r.salePrice != null && r.purchasePrice != null ? r.salePrice - r.purchasePrice : null;
                   const purchasedAt = toDateOnly(r.purchasedAt ?? r.createdAt);
                   const days = daysBetween(purchasedAt, sold ? r.soldAt ?? todayDateString() : todayDateString());
+                  const isStale = !sold && days >= staleThreshold;
                   return (
-                    <div className="candidate-row" key={r.id}>
+                    <div className={`candidate-row${isStale ? " history-row-stale" : ""}`} key={r.id}>
                       <div className="candidate-main" onClick={() => openEdit(r)}>
                         <div className="candidate-left">
                           <div className="candidate-brand">{r.brandName}</div>
@@ -283,11 +361,15 @@ export default function HistoryPage() {
                           )}
                         </div>
                         <div className="candidate-right">
-                          <span className={`status-badge ${sold ? "status-sold" : "status-instock"}`}>
-                            {sold ? "売却済" : "在庫"}
+                          <span
+                            className={`status-badge ${sold ? "status-sold" : isStale ? "status-stale" : "status-instock"}`}
+                          >
+                            {sold ? "売却済" : isStale ? "滞留" : "在庫"}
                           </span>
                           {profit != null && <div className="history-profit">+{yen(profit)}</div>}
-                          <div className="history-days">{sold ? `${days}日で売却` : `仕入れて${days}日`}</div>
+                          <div className={`history-days${isStale ? " stale" : ""}`}>
+                            {sold ? `${days}日で売却` : `仕入れて${days}日`}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -299,7 +381,21 @@ export default function HistoryPage() {
 
           <details className="history-settings">
             <summary>設定・端末の引き継ぎ</summary>
-            <div className="account-code-box">
+            <div className="field">
+              <label className="field-label">滞留アラートのしきい値（日数）</label>
+              <input
+                className="field-input"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={staleThresholdInput}
+                onChange={(e) => handleStaleThresholdChange(e.target.value)}
+              />
+              <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 4 }}>
+                在庫が仕入れてからこの日数以上経過すると、一覧で「滞留」として目立たせます（デフォルト60日）。
+              </div>
+            </div>
+            <div className="account-code-box" style={{ marginTop: 20 }}>
               <span className="account-code-value">
                 {accountCode ? formatAccountCodeForDisplay(accountCode) : ""}
               </span>

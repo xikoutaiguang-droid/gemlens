@@ -442,10 +442,24 @@ input[type="file"] { display: none; }
 }
 .status-instock { background: #eee; color: var(--gray); }
 .status-sold { background: var(--red); color: white; }
+.status-stale { background: var(--red); color: white; }
 .history-price { font-size: clamp(11px, 2vw, 13px); color: var(--gray); margin-top: 2px; }
 .history-item { font-size: clamp(11px, 2vw, 13px); color: var(--black); font-weight: 600; margin-top: 2px; }
 .history-profit { font-weight: 700; color: var(--red); }
 .history-days { font-size: 10px; color: var(--gray); margin-top: 4px; white-space: nowrap; }
+.history-days.stale { color: var(--red); font-weight: 700; }
+
+/* 滞留在庫（仕入れてからしきい値以上経過）を一覧上で目立たせる */
+.history-row-stale { background: #fff5f5; border-left: 4px solid var(--red); }
+.history-row-stale .candidate-main { padding-left: 8px; }
+
+.csv-export-btn {
+  align-self: flex-end; margin-bottom: 12px; padding: 8px 14px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  border: 2px solid var(--black); background: white; color: var(--black);
+  border-radius: 2px; cursor: pointer;
+}
+.csv-export-btn:active { background: var(--black); color: white; }
 
 .field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .field-label { font-size: 10px; color: var(--black); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }

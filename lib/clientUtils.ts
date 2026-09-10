@@ -5,6 +5,8 @@ import { generateAccountCode, normalizeAccountCode } from "./accountCode";
 
 const DEV_KEY_STORAGE = "gemlens_dev_key";
 const ACCOUNT_CODE_STORAGE = "gemlens_account_code";
+const STALE_THRESHOLD_STORAGE = "gemlens_stale_threshold_days";
+export const DEFAULT_STALE_THRESHOLD_DAYS = 60;
 
 // 仕入れ記録の「アイテム」欄で選択候補として表示するカテゴリ一覧。
 // セカンドストリート等の大手リユースストアの実際のカテゴリ構成を参考にしつつ、
@@ -104,6 +106,28 @@ export function setAccountCode(code: string): string {
     // ignore
   }
   return normalized;
+}
+
+// ------------------------------------------------------------
+//  在庫滞留アラートのしきい値（日数）。端末ごとにlocalStorageで保持し、
+//  ユーザーが任意で変更できる（デフォルト60日）
+// ------------------------------------------------------------
+export function getStaleThresholdDays(): number {
+  try {
+    const raw = localStorage.getItem(STALE_THRESHOLD_STORAGE);
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_STALE_THRESHOLD_DAYS;
+  } catch {
+    return DEFAULT_STALE_THRESHOLD_DAYS;
+  }
+}
+
+export function setStaleThresholdDays(days: number): void {
+  try {
+    localStorage.setItem(STALE_THRESHOLD_STORAGE, String(days));
+  } catch {
+    // ignore
+  }
 }
 
 export function compressImageFile(file: File): Promise<string> {
