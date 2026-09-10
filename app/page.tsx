@@ -7,9 +7,9 @@ import {
   compressImageFile,
   getDeveloperKey,
   getOrCreateAccountCode,
-  ITEM_CATEGORIES,
   resizeAndCompress,
 } from "../lib/clientUtils";
+import ItemCategoryPicker from "./components/ItemCategoryPicker";
 
 const MAX_IMAGES = 3;
 const SCAN_TIMEOUT_MS = 20000;
@@ -322,8 +322,7 @@ export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
-  const [historyItemCategory, setHistoryItemCategory] = useState("");
-  const [historyItemCustom, setHistoryItemCustom] = useState("");
+  const [historyItem, setHistoryItem] = useState("");
   const [historyPurchaseInput, setHistoryPurchaseInput] = useState("");
   const [historySubmitting, setHistorySubmitting] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -480,8 +479,7 @@ export default function HomePage() {
 
   const openAddToHistory = useCallback((target: { brandName: string; kana?: string }) => {
     setModalCandidate(null);
-    setHistoryItemCategory("");
-    setHistoryItemCustom("");
+    setHistoryItem("");
     setHistoryPurchaseInput("");
     setHistoryError("");
     setAddHistoryTarget(target);
@@ -496,8 +494,6 @@ export default function HomePage() {
         const accountCode = getOrCreateAccountCode();
         const trimmed = historyPurchaseInput.trim();
         const purchasePrice = !skipPrice && trimmed ? Number(trimmed) : undefined;
-        const item =
-          historyItemCategory === "その他" ? historyItemCustom.trim() : historyItemCategory || undefined;
         const res = await fetch("/api/history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -505,7 +501,7 @@ export default function HomePage() {
             accountCode,
             brandName: addHistoryTarget.brandName,
             kana: addHistoryTarget.kana,
-            item: item || undefined,
+            item: historyItem.trim() || undefined,
             purchasePrice,
           }),
         });
@@ -523,7 +519,7 @@ export default function HomePage() {
         setHistorySubmitting(false);
       }
     },
-    [addHistoryTarget, historyItemCategory, historyItemCustom, historyPurchaseInput]
+    [addHistoryTarget, historyItem, historyPurchaseInput]
   );
 
   const canAddMore = stagedImages.length < MAX_IMAGES;
@@ -818,34 +814,8 @@ export default function HomePage() {
             </div>
             <div className="modal-divider" />
             <div className="field">
-              <label className="field-label" htmlFor="history-item">
-                アイテム（任意）
-              </label>
-              <select
-                id="history-item"
-                className="field-input"
-                value={historyItemCategory}
-                onChange={(e) => setHistoryItemCategory(e.target.value)}
-                disabled={historySubmitting}
-              >
-                <option value="">選択してください</option>
-                {ITEM_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              {historyItemCategory === "その他" && (
-                <input
-                  className="field-input"
-                  type="text"
-                  placeholder="アイテム名を入力"
-                  value={historyItemCustom}
-                  onChange={(e) => setHistoryItemCustom(e.target.value)}
-                  disabled={historySubmitting}
-                  style={{ marginTop: 8 }}
-                />
-              )}
+              <label className="field-label">アイテム（任意）</label>
+              <ItemCategoryPicker onChange={setHistoryItem} disabled={historySubmitting} />
             </div>
             <div className="field">
               <label className="field-label" htmlFor="history-purchase-price">

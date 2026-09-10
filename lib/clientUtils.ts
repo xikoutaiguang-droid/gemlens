@@ -8,27 +8,6 @@ const ACCOUNT_CODE_STORAGE = "gemlens_account_code";
 const STALE_THRESHOLD_STORAGE = "gemlens_stale_threshold_days";
 export const DEFAULT_STALE_THRESHOLD_DAYS = 60;
 
-// 仕入れ記録の「アイテム」欄で選択候補として表示するカテゴリ一覧。
-// セカンドストリート等の大手リユースストアの実際のカテゴリ構成を参考にしつつ、
-// ブランドタグが付くファッション関連の商材に絞っている。
-// 「その他」を選ぶと自由入力欄が出る（<select>のカスタム入力代替）。
-export const ITEM_CATEGORIES = [
-  "メンズウェア",
-  "レディースウェア",
-  "キッズ・ベビー",
-  "バッグ",
-  "財布",
-  "シューズ",
-  "腕時計",
-  "リング",
-  "ネックレス",
-  "ブレスレット",
-  "アクセサリー",
-  "帽子",
-  "スポーツ・アウトドア",
-  "その他",
-];
-
 export function activateDeveloperKeyFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);
