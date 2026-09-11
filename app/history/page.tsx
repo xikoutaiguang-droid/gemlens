@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  compressImageFile,
   getOrCreateAccountCode,
   getStaleThresholdDays,
   setAccountCode as persistAccountCode,
@@ -16,6 +17,7 @@ interface HistoryRecord {
   brandName: string;
   kana?: string;
   item?: string;
+  photo?: string;
   purchasePrice?: number;
   salePrice?: number;
   purchasedAt?: string;
@@ -23,6 +25,8 @@ interface HistoryRecord {
   createdAt: string;
   memo?: string;
 }
+
+type StatusFilter = "all" | "instock" | "sold";
 
 function yen(n: number): string {
   return "¥" + n.toLocaleString();
@@ -55,6 +59,7 @@ export default function HistoryPage() {
 
   const [editTarget, setEditTarget] = useState<HistoryRecord | null>(null);
   const [editItem, setEditItem] = useState("");
+  const [editPhoto, setEditPhoto] = useState("");
   const [editPurchase, setEditPurchase] = useState("");
   const [editSale, setEditSale] = useState("");
   const [editPurchasedAt, setEditPurchasedAt] = useState("");
@@ -69,6 +74,11 @@ export default function HistoryPage() {
 
   const [staleThreshold, setStaleThreshold] = useState(60);
   const [staleThresholdInput, setStaleThresholdInput] = useState("60");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
 
   const loadHistory = useCallback(async (code: string) => {
     setLoading(true);
@@ -102,6 +112,7 @@ export default function HistoryPage() {
   function openEdit(record: HistoryRecord) {
     setEditTarget(record);
     setEditItem(record.item ?? "");
+    setEditPhoto(record.photo ?? "");
     setEditPurchase(record.purchasePrice != null ? String(record.purchasePrice) : "");
     setEditSale(record.salePrice != null ? String(record.salePrice) : "");
     setEditPurchasedAt(toDateOnly(record.purchasedAt ?? record.createdAt));
@@ -121,6 +132,7 @@ export default function HistoryPage() {
         body: JSON.stringify({
           accountCode,
           item: editItem.trim() ? editItem.trim() : null,
+          photo: editPhoto || null,
           purchasePrice: editPurchase.trim() ? Number(editPurchase) : null,
           salePrice: editSale.trim() ? Number(editSale) : null,
           purchasedAt: editPurchasedAt.trim() ? editPurchasedAt.trim() : null,
@@ -140,6 +152,11 @@ export default function HistoryPage() {
     } finally {
       setEditSubmitting(false);
     }
+  }
+
+  async function handleEditPhotoChange(file: File) {
+    const compressed = await compressImageFile(file, 400);
+    setEditPhoto(compressed);
   }
 
   async function handleDelete() {
@@ -259,6 +276,33 @@ export default function HistoryPage() {
     return sum + (r.salePrice - r.purchasePrice);
   }, 0);
 
+  const currentMonthPrefix = todayDateString().slice(0, 7); // "YYYY-MM"
+  const thisMonthPurchasedCount = records.filter((r) =>
+    toDateOnly(r.purchasedAt ?? r.createdAt).startsWith(currentMonthPrefix)
+  ).length;
+  const thisMonthProfit = records.reduce((sum, r) => {
+    if (!r.soldAt || !toDateOnly(r.soldAt).startsWith(currentMonthPrefix)) return sum;
+    if (r.purchasePrice == null || r.salePrice == null) return sum;
+    return sum + (r.salePrice - r.purchasePrice);
+  }, 0);
+
+  const filteredRecords = records.filter((r) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const matches = r.brandName.toLowerCase().includes(q) || (r.kana ?? "").toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+    const sold = r.salePrice != null;
+    if (filterStatus === "instock" && sold) return false;
+    if (filterStatus === "sold" && !sold) return false;
+    const purchasedAt = toDateOnly(r.purchasedAt ?? r.createdAt);
+    if (filterDateFrom && purchasedAt < filterDateFrom) return false;
+    if (filterDateTo && purchasedAt > filterDateTo) return false;
+    return true;
+  });
+  const isFiltering =
+    searchQuery.trim() !== "" || filterStatus !== "all" || filterDateFrom !== "" || filterDateTo !== "";
+
   return (
     <div id="app-root">
       <header>
@@ -323,8 +367,63 @@ export default function HistoryPage() {
                   <div className="history-summary-value profit">{yen(totalProfit)}</div>
                 </div>
               </div>
+
+              <div className="history-month-label">今月の実績</div>
+              <div className="history-summary history-summary-secondary">
+                <div className="history-summary-item">
+                  <div className="history-summary-label">仕入れ件数</div>
+                  <div className="history-summary-value">{thisMonthPurchasedCount}件</div>
+                </div>
+                <div className="history-summary-item">
+                  <div className="history-summary-label">利益</div>
+                  <div className="history-summary-value profit">{yen(thisMonthProfit)}</div>
+                </div>
+              </div>
+
+              <div className="history-filters">
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="ブランド名で検索"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <select
+                  className="field-input"
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as StatusFilter)}
+                >
+                  <option value="all">すべて（在庫・売却済）</option>
+                  <option value="instock">在庫のみ</option>
+                  <option value="sold">売却済のみ</option>
+                </select>
+                <div className="history-filter-dates">
+                  <input
+                    className="field-input"
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                  />
+                  <span>〜</span>
+                  <input
+                    className="field-input"
+                    type="date"
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                  />
+                </div>
+                {isFiltering && (
+                  <div className="history-filter-count">
+                    {filteredRecords.length} / {records.length}件を表示中
+                  </div>
+                )}
+              </div>
+
+              {filteredRecords.length === 0 ? (
+                <div className="history-empty">条件に一致する記録がありません。</div>
+              ) : (
               <div>
-                {records.map((r) => {
+                {filteredRecords.map((r) => {
                   const sold = r.salePrice != null;
                   const profit =
                     r.salePrice != null && r.purchasePrice != null ? r.salePrice - r.purchasePrice : null;
@@ -334,6 +433,12 @@ export default function HistoryPage() {
                   return (
                     <div className={`candidate-row${isStale ? " history-row-stale" : ""}`} key={r.id}>
                       <div className="candidate-main" onClick={() => openEdit(r)}>
+                        {r.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- 保存済みdata URLのサムネイルのためnext/imageは非対応
+                          <img className="history-thumb" src={r.photo} alt="" />
+                        ) : (
+                          <div className="history-thumb history-thumb-empty" aria-hidden="true" />
+                        )}
                         <div className="candidate-left">
                           <div className="candidate-brand">{r.brandName}</div>
                           <div className="candidate-kana">{r.kana || ""}</div>
@@ -364,6 +469,7 @@ export default function HistoryPage() {
                   );
                 })}
               </div>
+              )}
             </>
           )}
 
@@ -435,6 +541,43 @@ export default function HistoryPage() {
             </div>
             <div className="modal-divider" />
             <div className="field">
+              <label className="field-label">写真</label>
+              <div className="edit-photo-row">
+                {editPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- 保存済み/選択済みdata URLのプレビューのためnext/imageは非対応
+                  <img className="edit-photo-preview" src={editPhoto} alt="" />
+                ) : (
+                  <div className="edit-photo-preview edit-photo-preview-empty" aria-hidden="true" />
+                )}
+                <div className="edit-photo-actions">
+                  <label htmlFor="edit-photo-input" className="edit-photo-btn">
+                    {editPhoto ? "写真を変更" : "写真を追加"}
+                  </label>
+                  <input
+                    id="edit-photo-input"
+                    type="file"
+                    accept="image/*"
+                    disabled={editSubmitting}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleEditPhotoChange(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  {editPhoto && (
+                    <button
+                      type="button"
+                      className="edit-photo-btn edit-photo-remove"
+                      onClick={() => setEditPhoto("")}
+                      disabled={editSubmitting}
+                    >
+                      削除
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="field">
               <label className="field-label">アイテム</label>
               <ItemCategoryPicker initialValue={editTarget.item} onChange={setEditItem} disabled={editSubmitting} />
             </div>
@@ -476,7 +619,14 @@ export default function HistoryPage() {
                 type="number"
                 inputMode="numeric"
                 value={editSale}
-                onChange={(e) => setEditSale(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEditSale(value);
+                  // 売却値を初めて入力した際、売却日が空欄なら今日の日付を自動で補う
+                  if (value.trim() && !editSoldAt) {
+                    setEditSoldAt(todayDateString());
+                  }
+                }}
                 disabled={editSubmitting}
               />
             </div>

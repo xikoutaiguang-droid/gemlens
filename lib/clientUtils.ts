@@ -32,9 +32,14 @@ export function getDeveloperKey(): string | undefined {
   }
 }
 
-export function resizeAndCompress(source: CanvasImageSource, srcW: number, srcH: number): string {
+export function resizeAndCompress(
+  source: CanvasImageSource,
+  srcW: number,
+  srcH: number,
+  maxDimension = 1200
+): string {
   const canvas = document.createElement("canvas");
-  const MAX = 1200;
+  const MAX = maxDimension;
   let w = srcW;
   let h = srcH;
   if (w > h) {
@@ -50,6 +55,17 @@ export function resizeAndCompress(source: CanvasImageSource, srcW: number, srcH:
   canvas.height = h;
   canvas.getContext("2d")!.drawImage(source, 0, 0, w, h);
   return canvas.toDataURL("image/jpeg", 0.8);
+}
+
+// 履歴の写真サムネイル用: 既存のdata URL（撮影・選択済みの画像）を、
+// 保存容量を抑えるためより小さい最大辺で再エンコードする。
+export function resizeDataUrl(dataUrl: string, maxDimension: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(resizeAndCompress(img, img.width, img.height, maxDimension));
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
 }
 
 // ------------------------------------------------------------
@@ -109,12 +125,12 @@ export function setStaleThresholdDays(days: number): void {
   }
 }
 
-export function compressImageFile(file: File): Promise<string> {
+export function compressImageFile(file: File, maxDimension = 1200): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
-      img.onload = () => resolve(resizeAndCompress(img, img.width, img.height));
+      img.onload = () => resolve(resizeAndCompress(img, img.width, img.height, maxDimension));
       img.onerror = reject;
       img.src = e.target?.result as string;
     };

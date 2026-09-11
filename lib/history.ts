@@ -5,6 +5,7 @@ export interface HistoryRecord {
   brandName: string;
   kana?: string;
   item?: string;
+  photo?: string; // 圧縮済みサムネイル（data URL）
   purchasePrice?: number;
   salePrice?: number;
   purchasedAt?: string; // YYYY-MM-DD、編集可能
@@ -32,6 +33,7 @@ export interface CreateHistoryInput {
   brandName: string;
   kana?: string;
   item?: string;
+  photo?: string;
   purchasePrice?: number;
   memo?: string;
 }
@@ -52,6 +54,7 @@ export async function createHistoryRecord(
     brandName: input.brandName,
     kana: input.kana,
     item: input.item,
+    photo: input.photo,
     purchasePrice: input.purchasePrice,
     purchasedAt: todayDateString(),
     createdAt: new Date().toISOString(),
@@ -64,6 +67,7 @@ export async function createHistoryRecord(
 
 export interface UpdateHistoryInput {
   item?: string | null;
+  photo?: string | null;
   purchasePrice?: number | null;
   salePrice?: number | null;
   purchasedAt?: string | null;
@@ -72,7 +76,9 @@ export interface UpdateHistoryInput {
 }
 
 // undefinedのフィールドは「変更しない」、nullは「クリアする」という3値の区別を持つ。
-// 仕入れ日・売却日はユーザーが直接編集できる項目のため、ここでの自動設定は行わない。
+// 仕入れ日・売却日はユーザーが直接編集できる項目のため、指定があればそれを優先する。
+// ただし売却値だけが新たに設定され売却日が指定されなかった場合は、月次集計等が
+// 売却日を基準に計算するため、今日の日付を既定値として補う。
 export async function updateHistoryRecord(
   accountCode: string,
   id: string,
@@ -87,13 +93,20 @@ export async function updateHistoryRecord(
   if (index === -1) return null;
 
   const current = records[index];
+  const wasSold = current.salePrice != null;
 
   if (patch.item !== undefined) current.item = patch.item ?? undefined;
+  if (patch.photo !== undefined) current.photo = patch.photo ?? undefined;
   if (patch.purchasePrice !== undefined) current.purchasePrice = patch.purchasePrice ?? undefined;
-  if (patch.salePrice !== undefined) current.salePrice = patch.salePrice ?? undefined;
   if (patch.purchasedAt !== undefined) current.purchasedAt = patch.purchasedAt ?? undefined;
-  if (patch.soldAt !== undefined) current.soldAt = patch.soldAt ?? undefined;
   if (patch.memo !== undefined) current.memo = patch.memo ?? undefined;
+
+  if (patch.salePrice !== undefined) current.salePrice = patch.salePrice ?? undefined;
+  if (patch.soldAt !== undefined) {
+    current.soldAt = patch.soldAt ?? undefined;
+  } else if (!wasSold && current.salePrice != null) {
+    current.soldAt = todayDateString();
+  }
 
   records[index] = current;
   await redis.set(key, records);

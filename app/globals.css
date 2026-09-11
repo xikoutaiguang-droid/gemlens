@@ -435,6 +435,17 @@ input[type="file"] { display: none; }
 .history-summary-label { font-size: 9px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
 .history-summary-value { font-size: clamp(13px, 2.4vw, 17px); font-weight: 700; color: var(--black); }
 .history-summary-value.profit { color: var(--red); }
+.history-summary-secondary { grid-template-columns: repeat(2, 1fr); }
+.history-month-label {
+  font-size: 10px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 8px;
+}
+
+.history-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.history-filter-dates { display: flex; align-items: center; gap: 8px; }
+.history-filter-dates .field-input { flex: 1; min-width: 0; }
+.history-filter-dates span { color: var(--gray); font-size: 12px; flex-shrink: 0; }
+.history-filter-count { font-size: 11px; color: var(--gray); }
 
 .status-badge {
   font-size: 10px; letter-spacing: 0.5px; font-weight: 700; text-transform: uppercase;
@@ -452,6 +463,35 @@ input[type="file"] { display: none; }
 /* 滞留在庫（仕入れてからしきい値以上経過）を一覧上で目立たせる */
 .history-row-stale { background: #fff5f5; border-left: 4px solid var(--red); }
 .history-row-stale .candidate-main { padding-left: 8px; }
+
+.history-thumb {
+  width: 48px; height: 48px; object-fit: cover; flex-shrink: 0;
+  border: 2px solid var(--black); border-radius: 2px; background: #f5f5f5;
+}
+.history-thumb-empty { border-color: #ddd; }
+
+.edit-photo-row { display: flex; align-items: center; gap: 12px; }
+.edit-photo-preview {
+  width: 64px; height: 64px; object-fit: cover; flex-shrink: 0;
+  border: 2px solid var(--black); border-radius: 2px; background: #f5f5f5;
+}
+.edit-photo-preview-empty { border-color: #ddd; }
+.edit-photo-actions { display: flex; flex-direction: column; gap: 6px; }
+.edit-photo-btn {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 8px 14px; border: 2px solid var(--black); background: white; color: var(--black);
+  border-radius: 2px; cursor: pointer; text-align: center;
+}
+.edit-photo-remove { background: white; color: var(--red); border-color: var(--red); }
+
+.history-photo-preview {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--gray);
+}
+.history-photo-preview img {
+  width: 56px; height: 56px; object-fit: cover; flex-shrink: 0;
+  border: 2px solid var(--black); border-radius: 2px;
+}
 
 .csv-export-btn {
   align-self: flex-end; margin-bottom: 12px; padding: 8px 14px;

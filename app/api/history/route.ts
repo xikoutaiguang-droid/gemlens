@@ -19,6 +19,7 @@ interface CreateHistoryRequest {
   brandName?: string;
   kana?: string;
   item?: string;
+  photo?: string;
   purchasePrice?: number;
   memo?: string;
 }
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     brandName,
     kana: body?.kana,
     item: body?.item,
+    photo: body?.photo,
     purchasePrice: body?.purchasePrice,
     memo: body?.memo,
   });

@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 interface UpdateHistoryRequest {
   accountCode?: string;
   item?: string | null;
+  photo?: string | null;
   purchasePrice?: number | null;
   salePrice?: number | null;
   purchasedAt?: string | null;
@@ -25,6 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const record = await updateHistoryRecord(accountCode, id, {
     item: body?.item,
+    photo: body?.photo,
     purchasePrice: body?.purchasePrice,
     salePrice: body?.salePrice,
     purchasedAt: body?.purchasedAt,

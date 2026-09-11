@@ -8,11 +8,13 @@ import {
   getDeveloperKey,
   getOrCreateAccountCode,
   resizeAndCompress,
+  resizeDataUrl,
 } from "../lib/clientUtils";
 import ItemCategoryPicker from "./components/ItemCategoryPicker";
 
 const MAX_IMAGES = 3;
 const SCAN_TIMEOUT_MS = 20000;
+const HISTORY_THUMB_MAX_DIMENSION = 400;
 const LOADING_STEPS = ["Uploading...", "Reading tag...", "Identifying brand...", "Fetching market info..."];
 
 // ============================================================
@@ -494,6 +496,8 @@ export default function HomePage() {
         const accountCode = getOrCreateAccountCode();
         const trimmed = historyPurchaseInput.trim();
         const purchasePrice = !skipPrice && trimmed ? Number(trimmed) : undefined;
+        const sourceImage = lastImagesRef.current?.[0];
+        const photo = sourceImage ? await resizeDataUrl(sourceImage, HISTORY_THUMB_MAX_DIMENSION) : undefined;
         const res = await fetch("/api/history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -502,6 +506,7 @@ export default function HomePage() {
             brandName: addHistoryTarget.brandName,
             kana: addHistoryTarget.kana,
             item: historyItem.trim() || undefined,
+            photo,
             purchasePrice,
           }),
         });
@@ -813,6 +818,13 @@ export default function HomePage() {
               </button>
             </div>
             <div className="modal-divider" />
+            {lastImagesRef.current?.[0] && (
+              <div className="history-photo-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element -- 撮影済みdata URLのプレビューのためnext/imageは非対応 */}
+                <img src={lastImagesRef.current[0]} alt="" />
+                <span>この写真が記録に添付されます</span>
+              </div>
+            )}
             <div className="field">
               <label className="field-label">アイテム（任意）</label>
               <ItemCategoryPicker onChange={setHistoryItem} disabled={historySubmitting} />
