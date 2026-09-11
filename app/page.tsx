@@ -325,6 +325,8 @@ export default function HomePage() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
   const [historyItem, setHistoryItem] = useState("");
+  const [historyPhoto, setHistoryPhoto] = useState("");
+  const [historyCameraOpen, setHistoryCameraOpen] = useState(false);
   const [historyPurchaseInput, setHistoryPurchaseInput] = useState("");
   const [historySubmitting, setHistorySubmitting] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -482,6 +484,7 @@ export default function HomePage() {
   const openAddToHistory = useCallback((target: { brandName: string; kana?: string }) => {
     setModalCandidate(null);
     setHistoryItem("");
+    setHistoryPhoto("");
     setHistoryPurchaseInput("");
     setHistoryError("");
     setAddHistoryTarget(target);
@@ -496,8 +499,7 @@ export default function HomePage() {
         const accountCode = getOrCreateAccountCode();
         const trimmed = historyPurchaseInput.trim();
         const purchasePrice = !skipPrice && trimmed ? Number(trimmed) : undefined;
-        const sourceImage = lastImagesRef.current?.[0];
-        const photo = sourceImage ? await resizeDataUrl(sourceImage, HISTORY_THUMB_MAX_DIMENSION) : undefined;
+        const photo = historyPhoto ? await resizeDataUrl(historyPhoto, HISTORY_THUMB_MAX_DIMENSION) : undefined;
         const res = await fetch("/api/history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -524,7 +526,7 @@ export default function HomePage() {
         setHistorySubmitting(false);
       }
     },
-    [addHistoryTarget, historyItem, historyPurchaseInput]
+    [addHistoryTarget, historyItem, historyPhoto, historyPurchaseInput]
   );
 
   const canAddMore = stagedImages.length < MAX_IMAGES;
@@ -818,13 +820,42 @@ export default function HomePage() {
               </button>
             </div>
             <div className="modal-divider" />
-            {lastImagesRef.current?.[0] && (
-              <div className="history-photo-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- 撮影済みdata URLのプレビューのためnext/imageは非対応 */}
-                <img src={lastImagesRef.current[0]} alt="" />
-                <span>この写真が記録に添付されます</span>
-              </div>
-            )}
+            <div className="field">
+              <label className="field-label">アイテム全体の写真（任意）</label>
+              {historyPhoto ? (
+                <div className="history-photo-preview">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- 撮影済みdata URLのプレビューのためnext/imageは非対応 */}
+                  <img src={historyPhoto} alt="" />
+                  <div className="edit-photo-actions">
+                    <button
+                      type="button"
+                      className="edit-photo-btn"
+                      onClick={() => setHistoryCameraOpen(true)}
+                      disabled={historySubmitting}
+                    >
+                      撮り直す
+                    </button>
+                    <button
+                      type="button"
+                      className="edit-photo-btn edit-photo-remove"
+                      onClick={() => setHistoryPhoto("")}
+                      disabled={historySubmitting}
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-gallery"
+                  onClick={() => setHistoryCameraOpen(true)}
+                  disabled={historySubmitting}
+                >
+                  アイテム全体の写真を撮る
+                </button>
+              )}
+            </div>
             <div className="field">
               <label className="field-label">アイテム（任意）</label>
               <ItemCategoryPicker onChange={setHistoryItem} disabled={historySubmitting} />
@@ -872,6 +903,17 @@ export default function HomePage() {
           remainingSlots={MAX_IMAGES - stagedImages.length}
           onDone={handleCameraDone}
           onClose={() => setCameraOpen(false)}
+        />
+      )}
+
+      {historyCameraOpen && (
+        <CameraOverlay
+          remainingSlots={1}
+          onDone={(images) => {
+            setHistoryPhoto(images[0]);
+            setHistoryCameraOpen(false);
+          }}
+          onClose={() => setHistoryCameraOpen(false)}
         />
       )}
     </div>
