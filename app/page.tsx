@@ -455,11 +455,11 @@ export default function HomePage() {
 
   const handleGalleryChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+      const files = Array.from(e.target.files ?? []);
       e.target.value = "";
-      if (!file) return;
-      const dataUrl = await compressImageFile(file);
-      addStagedImages([dataUrl]);
+      if (!files.length) return;
+      const dataUrls = await Promise.all(files.map((file) => compressImageFile(file)));
+      addStagedImages(dataUrls);
     },
     [addStagedImages]
   );
@@ -762,6 +762,7 @@ export default function HomePage() {
             type="file"
             id="input-gallery"
             accept="image/*"
+            multiple
             ref={galleryInputRef}
             onChange={handleGalleryChange}
           />
