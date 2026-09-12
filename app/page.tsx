@@ -607,6 +607,9 @@ export default function HomePage() {
                 <br />
                 文字のない記号・ロゴのみのタグは、複数枚撮影すると判定精度が上がります。
               </div>
+              <Link href="/legal" className="idle-legal-link">
+                利用規約・プライバシーポリシー
+              </Link>
             </div>
           )}
 

@@ -507,6 +507,10 @@ export default function HistoryPage() {
                 {codeCopied ? "コピーしました" : "コピー"}
               </button>
             </div>
+            <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 6, lineHeight: 1.6 }}>
+              このコードを紛失すると記録に二度とアクセスできなくなります。メモ帳等に控えておくか、
+              上部の「CSVエクスポート」で定期的にバックアップを取ることをおすすめします。
+            </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label className="field-label">別の端末のコードを復元</label>
               <input

@@ -549,3 +549,30 @@ input.field-input[type="date"] {
   85% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+.idle-legal-link {
+  display: inline-block; margin-top: 10px; font-size: 11px; color: var(--gray);
+  text-decoration: underline;
+}
+
+.legal-root {
+  min-height: 100vh; min-height: 100dvh; width: 100%;
+  display: flex; flex-direction: column; background: #f2f2f2;
+}
+.legal-body {
+  max-width: 640px; width: 100%; margin: 0 auto;
+  padding: 28px 20px 60px; color: var(--black); line-height: 1.8; font-size: 14px;
+}
+.legal-title { font-size: 20px; margin-bottom: 4px; }
+.legal-updated { font-size: 12px; color: var(--gray); margin-bottom: 28px; }
+.legal-section { margin-bottom: 32px; }
+.legal-section h2 {
+  font-size: 16px; border-bottom: 2px solid var(--black); padding-bottom: 8px; margin-bottom: 16px;
+}
+.legal-section h3 { font-size: 14px; margin: 18px 0 6px; }
+.legal-section p, .legal-section ul { margin-bottom: 8px; }
+.legal-section ul { padding-left: 20px; }
+.legal-section li { margin-bottom: 4px; }
+.legal-contact {
+  font-weight: 700; background: #fafafa; border: 2px dashed var(--gray); padding: 10px 12px;
+}
