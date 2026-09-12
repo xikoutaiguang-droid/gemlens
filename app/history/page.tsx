@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   compressImageFile,
+  getAccountCode,
   getOrCreateAccountCode,
   getStaleThresholdDays,
   setAccountCode as persistAccountCode,
@@ -84,6 +85,7 @@ export default function HistoryPage() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true);
   const [showLinkInstructions, setShowLinkInstructions] = useState(false);
+  const [showStandaloneNoCodePrompt, setShowStandaloneNoCodePrompt] = useState(false);
 
   const [staleThreshold, setStaleThreshold] = useState(60);
   const [staleThresholdInput, setStaleThresholdInput] = useState("60");
@@ -105,6 +107,11 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+
     // 公式サイトで発行した復元コードをURLの?codeで引き継いだ場合、
     // 最優先でこの端末のコードとして保存する（app/page.tsxの同ロジックと同様）。
     const urlParams = new URLSearchParams(window.location.search);
@@ -117,19 +124,25 @@ export default function HistoryPage() {
       const cleanUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
       window.history.replaceState({}, "", cleanUrl);
     } else {
-      code = getOrCreateAccountCode();
+      const existing = getAccountCode();
+      if (existing) {
+        code = existing;
+      } else if (standalone) {
+        // ホーム画面アプリから直接このページへ来た場合も、app/page.tsxのルート画面と同じく
+        // その場でコードを新規発行してしまわないようにする（誤って「連携していないのに
+        // 連携済み扱い」になる事故を防ぐ）。既存コードの入力か、公式サイトでの発行に誘導する。
+        setShowStandaloneNoCodePrompt(true);
+        setLoading(false);
+        return;
+      } else {
+        code = getOrCreateAccountCode();
+      }
     }
     setAccountCodeState(code);
     loadHistory(code);
     const threshold = getStaleThresholdDays();
     setStaleThreshold(threshold);
     setStaleThresholdInput(String(threshold));
-
-    // 既にホーム画面から起動している場合は「追加して連携」ボタンの意味が無いため隠す
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true;
-    setIsStandalone(standalone);
 
     fetch(`/api/usage?accountCode=${encodeURIComponent(code)}`)
       .then((res) => res.json())
@@ -266,6 +279,13 @@ export default function HistoryPage() {
       setAccountCodeState(normalized);
       setRecords(data.records ?? []);
       setRestoreInput("");
+      setShowStandaloneNoCodePrompt(false);
+      fetch(`/api/usage?accountCode=${encodeURIComponent(normalized)}`)
+        .then((r) => r.json())
+        .then((d: { plan?: "free" | "standard" | "premium" }) => {
+          if (d.plan) setPlan(d.plan);
+        })
+        .catch(() => {});
     } catch {
       setRestoreError("送信中にエラーが発生しました");
     }
@@ -809,6 +829,69 @@ export default function HistoryPage() {
                 保存
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showStandaloneNoCodePrompt && (
+        <div className="modal-overlay">
+          <div className="sheet-box">
+            <div className="modal-header">
+              <div className="modal-names">
+                <div id="modal-brand">連携が必要です</div>
+              </div>
+            </div>
+            <div className="modal-divider" />
+            <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
+              このホーム画面アプリはまだ連携されていません。
+              <br />
+              以前に発行された12桁の復元コードをお持ちの場合は下に入力してください。
+            </div>
+            <div className="field">
+              <label className="field-label">復元コード（お持ちの場合）</label>
+              <input
+                className="field-input"
+                value={restoreInput}
+                onChange={(e) => setRestoreInput(e.target.value)}
+                placeholder="XXXX-XXXX-XXXX"
+              />
+              {restoreError && <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{restoreError}</div>}
+            </div>
+            <button
+              type="button"
+              className="btn btn-submit"
+              onClick={submitRestore}
+              disabled={!restoreInput.trim()}
+              style={{ marginTop: 12 }}
+            >
+              このコードで復元する
+            </button>
+            <div className="modal-divider" style={{ margin: "16px 0" }} />
+            <div style={{ fontSize: 12, lineHeight: 1.7, color: "var(--gray)", marginBottom: 8 }}>
+              お持ちでない場合：下のボタンから公式サイトを開いてください（別サイトなので、
+              このアプリからでも正しくSafari/Chromeが開きます）。公式サイトの「マイページ」で
+              復元コードを新しく発行し、表示されるボタンから本体アプリを開いてください。
+            </div>
+            <a
+              href="https://gemlens-official.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "center",
+                padding: "12px",
+                background: "white",
+                color: "var(--black)",
+                fontWeight: 700,
+                fontSize: 13,
+                border: "2px solid var(--black)",
+                textDecoration: "none",
+                boxSizing: "border-box",
+              }}
+            >
+              公式サイトを開く
+            </a>
           </div>
         </div>
       )}
