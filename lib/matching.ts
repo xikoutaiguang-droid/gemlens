@@ -24,8 +24,9 @@ export function normLoose(str: unknown): string {
 // "+"は「PLUS」の略記として使われることがある（例：タグ表記「BEAMS+」⇔ DB表記「BEAMS PLUS」）。
 // OCRがどちらの表記で読み取っても同一ブランドとして解決できるよう、
 // 完全一致に失敗した場合のみ「+」→「plus」変換した上でも比較する。
-function normPlusVariant(s: string): string {
-  return normLoose(s).replace(/\+/g, "plus");
+// 全角「＋」（U+FF0B）で読み取られるケースも吸収する。
+export function normPlusVariant(s: string): string {
+  return normLoose(s).replace(/[+＋]/g, "plus");
 }
 
 export function matchBrandName(rawName: string, brandEntries: BrandEntry[]): BrandEntry | null {

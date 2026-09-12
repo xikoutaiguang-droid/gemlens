@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, norm, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, norm, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { isProUser } from "@/lib/pro";
 import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/requestIp";
@@ -68,13 +68,12 @@ async function callGeminiVision(
         const familyCheckDebug = `候補=[${children.map((c) => c.brandName).join(", ")}] 応答=${variant ?? "(親ブランドのまま/null)"}`;
         if (variant) {
           // Geminiには候補一覧の表記通り返すよう指示しているが、実際には
-          // タグに書かれている通りの表記（例：「BEAMS+」）でそのまま返してくることがある。
-          // 「+」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
+          // タグに書かれている通りの表記（例：「BEAMS+」「BEAMS＋」）でそのまま返してくることがある。
+          // 「+」「＋」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
           // 部分一致も許容して探すことで、完全一致の失敗によるフォールバックを防ぐ。
-          const normPlus = (s: string) => norm(s).replace(/\+/g, "plus");
-          const normVariant = normPlus(variant);
+          const normVariant = normPlusVariant(variant);
           const variantEntry = children.find((c) => {
-            const normChild = normPlus(c.brandName);
+            const normChild = normPlusVariant(c.brandName);
             return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
           });
           if (variantEntry) {
