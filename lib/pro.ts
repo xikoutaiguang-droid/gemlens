@@ -1,14 +1,70 @@
-// ------------------------------------------------------------
-//  PROプラン判定（簡易スタブ）
-//  本番リリース時、コストが発生するAI機能（Google検索連携など）を
-//  PRO会員限定にするための入口。現時点では決済・会員基盤が無いため、
-//  PRO_TIER_ENABLED = false の間は全ユーザーにフル機能を提供する。
-// ------------------------------------------------------------
-export const PRO_TIER_ENABLED = false; // 本番リリース準備ができたら true に切替
+import { getRedis } from "./redisClient";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- 本番実装時にPRO判定へ差し替える想定のスタブ引数
-export function isProUser(_deviceId: string | undefined): boolean {
-  if (!PRO_TIER_ENABLED) return true; // テスト段階：全員フル機能
-  // TODO: 本番実装時、実際の会員・決済ステータスをここで判定する
-  return false;
+// ------------------------------------------------------------
+//  PROプラン判定
+//  復元コード（accountCode）単位でStripeのサブスク状態をRedisに保存し、判定する。
+//  スタンダード（¥500）: 1日のスキャン回数上限を撤廃するのみ
+//  プレミアム（¥980）: 上記に加えてGoogle検索連携・画像類似検索など、
+//  コストが発生する高精度判定機能を有効にする
+// ------------------------------------------------------------
+
+export type PlanLevel = "free" | "standard" | "premium";
+
+export interface StoredProState {
+  plan: "standard" | "premium";
+  status: string; // Stripeのsubscription.statusをそのまま保存（active, trialing, past_due, canceled等）
+  customerId: string;
+  subscriptionId: string;
+  currentPeriodEnd?: number; // unix seconds
+}
+
+export interface ProStatus {
+  plan: PlanLevel;
+  active: boolean;
+  subscriptionStatus?: string;
+  currentPeriodEnd?: number;
+}
+
+// 支払いが継続していると見なせるステータス（trialingも無料お試し中として機能フル解放する）
+const ACTIVE_STATUSES = new Set(["active", "trialing"]);
+
+function proKey(accountCode: string): string {
+  return `pro_${accountCode}`;
+}
+
+export async function getProStatus(accountCode: string | undefined): Promise<ProStatus> {
+  if (!accountCode) return { plan: "free", active: false };
+  const redis = getRedis();
+  if (!redis) return { plan: "free", active: false };
+
+  const state = await redis.get<StoredProState>(proKey(accountCode));
+  if (!state) return { plan: "free", active: false };
+
+  const active = ACTIVE_STATUSES.has(state.status);
+  return {
+    plan: active ? state.plan : "free",
+    active,
+    subscriptionStatus: state.status,
+    currentPeriodEnd: state.currentPeriodEnd,
+  };
+}
+
+export async function setProState(accountCode: string, state: StoredProState): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  await redis.set(proKey(accountCode), state);
+}
+
+export async function getProStateByAccountCode(accountCode: string): Promise<StoredProState | null> {
+  const redis = getRedis();
+  if (!redis) return null;
+  return (await redis.get<StoredProState>(proKey(accountCode))) ?? null;
+}
+
+export function hasUnlimitedScans(status: ProStatus): boolean {
+  return status.active;
+}
+
+export function hasAdvancedMatching(status: ProStatus): boolean {
+  return status.active && status.plan === "premium";
 }

@@ -9,7 +9,7 @@ import { getRedis } from "./redisClient";
 // サーバー側で観測するIPアドレスは上記の操作では変わらないため、これを主キーにする。
 // 同一Wi-Fi/回線を共有する複数ユーザーが枠を共有してしまう副作用はあるが、
 // ログイン不要の匿名利用を維持したまま悪用を防ぐための現実的な妥協点として採用する。
-const DAILY_FREE_LIMIT = 10;
+export const DAILY_FREE_LIMIT = 10;
 const KEY_TTL_SEC = 60 * 60 * 36; // 36時間で自動失効（日またぎの余裕を持たせる）
 
 export interface UsageResult {

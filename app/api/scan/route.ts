@@ -10,8 +10,8 @@ import {
   type MarketAdvice,
 } from "@/lib/gemini";
 import { matchBrandName, matchByKeywords, norm, normPlusVariant, type BrandEntry } from "@/lib/matching";
-import { isProUser } from "@/lib/pro";
-import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
+import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
+import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/requestIp";
 import { embedImage } from "@/lib/embeddings";
 import { queryReferenceImages } from "@/lib/vectorStore";
@@ -38,9 +38,8 @@ async function callGeminiVision(
   base64Images: string[],
   visionResult: VisionResult,
   brandEntries: BrandEntry[],
-  deviceId: string | undefined
+  useGrounding: boolean
 ): Promise<GeminiVisionResult> {
-  const useGrounding = isProUser(deviceId);
   const perceived = await readBrandTextFromImage(base64Images, visionResult);
 
   if (perceived) {
@@ -224,7 +223,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null);
     const rawImages = body?.images;
-    const deviceId: string | undefined = typeof body?.deviceId === "string" ? body.deviceId : undefined;
+    const accountCode: string | undefined = typeof body?.accountCode === "string" ? body.accountCode : undefined;
     const devKey: string | undefined = typeof body?.devKey === "string" ? body.devKey : undefined;
 
     if (!Array.isArray(rawImages) || !rawImages.length) {
@@ -232,14 +231,23 @@ export async function POST(req: NextRequest) {
     }
     const base64Images: string[] = rawImages.slice(0, 3);
 
-    const usage = await checkAndIncrementUsage(getClientIp(req), devKey);
-    if (!usage.allowed) {
-      return NextResponse.json({
-        success: false,
-        limitReached: true,
-        message: `本日の無料利用回数（${usage.limit}回）に達しました。また明日お試しください。`,
-        usage,
-      });
+    const proStatus = await getProStatus(accountCode);
+    const isDeveloper = isDeveloperKey(devKey);
+    const unlimited = hasUnlimitedScans(proStatus) || isDeveloper;
+
+    let usage: UsageResult;
+    if (unlimited) {
+      usage = { allowed: true, count: 0, limit: DAILY_FREE_LIMIT, isDeveloper };
+    } else {
+      usage = await checkAndIncrementUsage(getClientIp(req), devKey);
+      if (!usage.allowed) {
+        return NextResponse.json({
+          success: false,
+          limitReached: true,
+          message: `本日の無料利用回数（${usage.limit}回）に達しました。また明日お試しください。`,
+          usage,
+        });
+      }
     }
 
     const visionResult = await callVisionApi(base64Images[0]);
@@ -251,7 +259,8 @@ export async function POST(req: NextRequest) {
     if (visionResult.pageTitles.length) debugLines.push("[PAGES] " + visionResult.pageTitles.join(" / "));
 
     const brandEntries = await loadBrandEntries();
-    let geminiResult = await callGeminiVision(base64Images, visionResult, brandEntries, deviceId);
+    const useAdvancedMatching = hasAdvancedMatching(proStatus) || isDeveloper;
+    let geminiResult = await callGeminiVision(base64Images, visionResult, brandEntries, useAdvancedMatching);
 
     if (geminiResult.perceivedText) {
       debugLines.push("[READ] " + geminiResult.perceivedText);
@@ -273,9 +282,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 最終フォールバック（PRO限定）: 手動登録した参照画像との類似検索
+    // 最終フォールバック（プレミアム限定）: 手動登録した参照画像との類似検索
     // ロゴ・エンブレムのみで文字情報がほぼ無いタグ向け。参照画像が未登録のブランドには効果がない。
-    if (!geminiResult.brandName && isProUser(deviceId)) {
+    if (!geminiResult.brandName && useAdvancedMatching) {
       try {
         const vector = await embedImage(base64Images[0]);
         const matches = await queryReferenceImages(vector, 3);

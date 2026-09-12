@@ -42,6 +42,8 @@ interface UsageInfo {
   isDeveloper: boolean;
 }
 
+type PlanLevel = "free" | "standard" | "premium";
+
 interface ScanResult {
   success: boolean;
   single?: boolean;
@@ -60,23 +62,6 @@ interface ScanResult {
 }
 
 type Phase = "idle" | "staging" | "loading" | "result-single" | "result-candidates" | "result-error";
-
-// ============================================================
-//  端末識別ID（1日の無料利用回数カウント用）
-// ============================================================
-function getDeviceId(): string {
-  try {
-    const KEY = "brandtag_device_id";
-    let id = localStorage.getItem(KEY);
-    if (!id) {
-      id = "dev-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem(KEY, id);
-    }
-    return id;
-  } catch {
-    return "anonymous";
-  }
-}
 
 // ============================================================
 //  相場情報の表示（人気アイテム / 価格帯）
@@ -323,6 +308,7 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showSplash, setShowSplash] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [plan, setPlan] = useState<PlanLevel>("free");
   const [addHistoryTarget, setAddHistoryTarget] = useState<{ brandName: string; kana?: string } | null>(null);
   const [historyItem, setHistoryItem] = useState("");
   const [historyPhoto, setHistoryPhoto] = useState("");
@@ -347,10 +333,12 @@ export default function HomePage() {
     const devKey = getDeveloperKey();
     const params = new URLSearchParams();
     if (devKey) params.set("devKey", devKey);
+    params.set("accountCode", getOrCreateAccountCode());
     fetch("/api/usage?" + params.toString())
       .then((res) => res.json())
-      .then((data: { usage?: UsageInfo }) => {
+      .then((data: { usage?: UsageInfo; plan?: PlanLevel }) => {
         if (data.usage) setUsage(data.usage);
+        if (data.plan) setPlan(data.plan);
       })
       .catch(() => {
         // 残り回数の取得に失敗しても本体機能には影響させない
@@ -411,7 +399,7 @@ export default function HomePage() {
         const res = await fetch("/api/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ images, deviceId: getDeviceId(), devKey: getDeveloperKey() }),
+          body: JSON.stringify({ images, accountCode: getOrCreateAccountCode(), devKey: getDeveloperKey() }),
         });
         const data: ScanResult = await res.json();
 
@@ -585,7 +573,10 @@ export default function HomePage() {
           <Link href="/history" className="history-link" onClick={(e) => e.stopPropagation()}>
             履歴
           </Link>
-          {usage && (
+          <Link href="/upgrade" className="history-link" onClick={(e) => e.stopPropagation()}>
+            {plan === "premium" ? "プレミアム" : plan === "standard" ? "スタンダード" : "プラン"}
+          </Link>
+          {usage && plan === "free" && (
             <span className="usage-badge">
               {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
             </span>
