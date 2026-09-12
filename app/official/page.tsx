@@ -16,6 +16,19 @@ function formatDate(iso: string): string {
 
 const APP_URL = "https://gemlens-tawny.vercel.app";
 
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return <div className="official-eyebrow">{children}</div>;
+}
+
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="official-section-head">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="official-h2">{title}</h2>
+    </div>
+  );
+}
+
 // 実際のアプリ本体（app/page.tsx）の待機画面と同じクラス（globals.css）を再利用した
 // スクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
 // 静止画ではなくアプリ本体と共通のCSSクラスでそのまま再現する。
@@ -102,171 +115,107 @@ export default function OfficialSitePage() {
 
   return (
     <div className="official-page">
-      <header style={{ background: "#0a0a0a", color: "white", padding: "20px", textAlign: "center" }}>
-        <div className="logo-text" style={{ fontSize: 22 }}>
+      <header className="official-header">
+        <div className="logo-text" style={{ fontSize: 20 }}>
           GemLens
         </div>
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6, letterSpacing: 1 }}>公式サイト</div>
       </header>
 
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "32px 20px 60px" }}>
-        <section style={{ marginBottom: 36, textAlign: "center" }}>
-          <h1 style={{ fontSize: 19, marginBottom: 10, lineHeight: 1.5 }}>ブランドタグを撮るだけで、その場で判定</h1>
-          <p style={{ fontSize: 13, lineHeight: 1.8, color: "#333", marginBottom: 20, textAlign: "left" }}>
+      <div className="official-container">
+        <section className="official-hero">
+          <Eyebrow>Tag it. Know it.</Eyebrow>
+          <h1 className="official-h1">
+            ブランドタグを
+            <br />
+            撮るだけで判定
+          </h1>
+          <p className="official-lead">
             GEMLENSは、アパレル製品のタグを撮影するだけでAIがブランド名を判定し、
             古着買取・販売の相場情報も確認できるツールです。会員登録は不要で、
             ブラウザからすぐにお使いいただけます。
           </p>
+
           <AppPreview />
-          <a
-            href={APP_URL}
-            style={{
-              display: "block",
-              marginTop: 24,
-              padding: "14px",
-              background: "#0a0a0a",
-              color: "white",
-              textAlign: "center",
-              fontWeight: 700,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
-          >
+
+          <a href={APP_URL} className="official-cta">
             アプリを開く
           </a>
         </section>
 
-        <section style={{ marginBottom: 36 }}>
-          <h2 style={{ fontSize: 15, marginBottom: 14, borderBottom: "2px solid #0a0a0a", paddingBottom: 8 }}>
-            使い方
-          </h2>
-          <ol style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16 }}>
+        <section className="official-section">
+          <SectionHeading eyebrow="How it works" title="使い方" />
+          <ol className="official-steps">
             {[
-              { n: "1", t: "タグを撮影する", d: "服のブランドタグを1〜3枚撮影します。文字が読みにくい記号だけのタグは複数枚がおすすめです。" },
-              { n: "2", t: "AIが自動で判定", d: "刺繍や印字の文字をAIが読み取り、登録済みのブランドデータベースと照合します。" },
-              { n: "3", t: "相場情報を確認", d: "判定結果と合わせて、買取・販売の目安相場や人気アイテムの情報も表示されます。" },
+              { n: "01", t: "タグを撮影する", d: "服のブランドタグを1〜3枚撮影します。文字が読みにくい記号だけのタグは複数枚がおすすめです。" },
+              { n: "02", t: "AIが自動で判定", d: "刺繍や印字の文字をAIが読み取り、登録済みのブランドデータベースと照合します。" },
+              { n: "03", t: "相場情報を確認", d: "判定結果と合わせて、買取・販売の目安相場や人気アイテムの情報も表示されます。" },
             ].map((step) => (
-              <li key={step.n} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div
-                  style={{
-                    flexShrink: 0,
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#0a0a0a",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  {step.n}
-                </div>
+              <li key={step.n} className="official-step">
+                <div className="official-step-n">{step.n}</div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{step.t}</div>
-                  <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>{step.d}</div>
+                  <div className="official-step-t">{step.t}</div>
+                  <div className="official-step-d">{step.d}</div>
                 </div>
               </li>
             ))}
           </ol>
         </section>
 
-        <section style={{ marginBottom: 36 }}>
-          <h2 style={{ fontSize: 15, marginBottom: 14, borderBottom: "2px solid #0a0a0a", paddingBottom: 8 }}>
-            こんな方におすすめ
-          </h2>
-          <ul style={{ paddingLeft: 18, fontSize: 13, lineHeight: 2, color: "#333" }}>
+        <section className="official-section">
+          <SectionHeading eyebrow="Who it's for" title="こんな方におすすめ" />
+          <ul className="official-list">
             <li>古着の買取・販売を行っている個人事業主・小規模店舗の方</li>
             <li>フリマアプリやオークションで仕入れ・出品をしている方</li>
             <li>タグの文字が読みにくく、ブランドの見分けに時間がかかっている方</li>
           </ul>
         </section>
 
-        <section style={{ border: "2px solid #0a0a0a", padding: 20, background: "white", marginBottom: 36 }}>
-          <h2 style={{ fontSize: 15, marginBottom: 12 }}>マイページ（簡易確認）</h2>
-
-          {!lookedUpCode ? (
-            <>
-              <p style={{ fontSize: 12, color: "#666", marginBottom: 10, lineHeight: 1.6 }}>
-                復元コードを入力すると、現在のプランと登録日を確認できます。
-              </p>
-              <input
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value)}
-                placeholder="XXXX-XXXX-XXXX"
-                style={{
-                  width: "100%",
-                  padding: 12,
-                  fontSize: 16,
-                  border: "2px solid #0a0a0a",
-                  boxSizing: "border-box",
-                  marginBottom: 8,
-                }}
-              />
-              {error && <div style={{ color: "#E31E24", fontSize: 12, marginBottom: 8 }}>{error}</div>}
-              <button
-                onClick={() => lookup(codeInput)}
-                disabled={loading || !codeInput.trim()}
-                style={{
-                  width: "100%",
-                  padding: 12,
-                  background: "#0a0a0a",
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {loading ? "確認中..." : "確認する"}
-              </button>
-            </>
-          ) : (
-            <div style={{ fontSize: 13, lineHeight: 2 }}>
-              <div>
-                復元コード：<strong>{formatAccountCodeForDisplay(lookedUpCode)}</strong>
+        <section className="official-section">
+          <SectionHeading eyebrow="Check your account" title="マイページ（簡易確認）" />
+          <div className="official-card">
+            {!lookedUpCode ? (
+              <>
+                <p className="official-card-note">復元コードを入力すると、現在のプランと登録日を確認できます。</p>
+                <input
+                  className="official-input"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                  placeholder="XXXX-XXXX-XXXX"
+                />
+                {error && <div className="official-error">{error}</div>}
+                <button className="official-btn" onClick={() => lookup(codeInput)} disabled={loading || !codeInput.trim()}>
+                  {loading ? "確認中..." : "確認する"}
+                </button>
+              </>
+            ) : (
+              <div className="official-account-info">
+                <div>
+                  復元コード：<strong>{formatAccountCodeForDisplay(lookedUpCode)}</strong>
+                </div>
+                <div>
+                  現在のプラン：
+                  <strong>{info?.plan === "premium" ? "PREMIUM" : info?.plan === "standard" ? "STANDARD" : "FREE"}</strong>
+                </div>
+                {info?.firstSeenAt && <div>登録日：{formatDate(info.firstSeenAt)}</div>}
+                <a href={`${APP_URL}/history`} className="official-btn official-btn-ghost">
+                  アプリのマイページを開く
+                </a>
               </div>
-              <div>
-                現在のプラン：
-                <strong>{info?.plan === "premium" ? "PREMIUM" : info?.plan === "standard" ? "STANDARD" : "FREE"}</strong>
-              </div>
-              {info?.firstSeenAt && <div>登録日：{formatDate(info.firstSeenAt)}</div>}
-              <a
-                href={`${APP_URL}/history`}
-                style={{
-                  display: "block",
-                  marginTop: 14,
-                  padding: "10px",
-                  background: "white",
-                  color: "#0a0a0a",
-                  border: "2px solid #0a0a0a",
-                  textAlign: "center",
-                  fontWeight: 700,
-                  fontSize: 12,
-                  textDecoration: "none",
-                }}
-              >
-                アプリのマイページを開く
-              </a>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
-        <section style={{ marginBottom: 36 }}>
-          <h2 style={{ fontSize: 15, marginBottom: 14, borderBottom: "2px solid #0a0a0a", paddingBottom: 8 }}>
-            よくある質問
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <section className="official-section">
+          <SectionHeading eyebrow="FAQ" title="よくある質問" />
+          <div className="official-faq">
             {[
               { q: "会員登録は必要ですか？", a: "不要です。ブラウザからそのままお使いいただけます。仕入れ記録を残したい場合のみ、端末間の引き継ぎ用に自動発行される「復元コード」を使います。" },
               { q: "無料で使えますか？", a: "1日10回までのスキャンと、月20件までの仕入れ記録の保存は無料です。回数無制限やより高精度な判定は有料プランでご利用いただけます。" },
               { q: "対応しているブランドは？", a: "国内外の古着市場で流通する主要ブランドに対応しています。データベースは順次拡充しています。" },
             ].map((item) => (
-              <div key={item.q}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Q. {item.q}</div>
-                <div style={{ fontSize: 12, color: "#666", lineHeight: 1.8 }}>A. {item.a}</div>
+              <div key={item.q} className="official-faq-item">
+                <div className="official-faq-q">Q. {item.q}</div>
+                <div className="official-faq-a">A. {item.a}</div>
               </div>
             ))}
           </div>
@@ -274,10 +223,8 @@ export default function OfficialSitePage() {
 
         <AdSlot />
 
-        <footer style={{ marginTop: 40, paddingTop: 20, borderTop: "1px solid #ddd", textAlign: "center" }}>
-          <a href={`${APP_URL}/legal`} style={{ fontSize: 11, color: "#888", textDecoration: "underline" }}>
-            利用規約・プライバシーポリシー
-          </a>
+        <footer className="official-footer">
+          <a href={`${APP_URL}/legal`}>利用規約・プライバシーポリシー</a>
         </footer>
       </div>
     </div>
