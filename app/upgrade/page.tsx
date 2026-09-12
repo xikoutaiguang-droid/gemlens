@@ -153,13 +153,22 @@ export default function UpgradePage() {
           <div
             key={plan.id}
             style={{
-              border: "2px solid var(--black)",
+              border: plan.id === "premium" ? "2px solid var(--red)" : "2px solid var(--black)",
               padding: 20,
               marginBottom: 20,
               opacity: currentPlan === plan.id ? 0.6 : 1,
             }}
           >
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{plan.name}</div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                marginBottom: 4,
+                color: plan.id === "premium" ? "var(--red)" : "inherit",
+              }}
+            >
+              {plan.name}
+            </div>
             <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{plan.price}</div>
             {plan.trial && <div style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 10 }}>{plan.trial}</div>}
             <ul style={{ paddingLeft: 18, marginBottom: 16, fontSize: 13, lineHeight: 1.8 }}>
