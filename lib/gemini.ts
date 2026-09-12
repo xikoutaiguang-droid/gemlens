@@ -116,14 +116,16 @@ export async function checkFamilyVariant(
       "添えられることで区別される、以下のような系列ブランドが存在します。",
       siblingNames.join("、"),
       "",
-      "画像をもう一度注意深く確認してください。メインの文字のすぐ近く（右上・下など）に、",
-      "小さな「+」のような記号や、上記のいずれかを示す追加の単語が無いか確認してください。",
+      "画像を拡大するつもりで、メインの文字（特に最後の文字の右側・右上・真下）を",
+      "一文字ずつ確認してください。周囲と色が違う小さな記号（例：小さな十字型の「+」）や、",
+      "上記のいずれかを示す小さな追加の単語が無いか、細部まで注意深く探してください。",
       "小さく装飾的に見えるためロゴの飾りだと誤解しやすいですが、これらはブランド名の一部です。",
       "",
-      "【回答形式】厳守",
-      "上記のいずれかに一致する記号・単語が見つかった場合は、該当する系列ブランド名を",
-      "上記の表記そのままで1行だけ返してください。",
-      `見当たらない場合は「${parentBrandName}」とだけ返してください。`,
+      "【回答形式】厳守。以下の2行のみで回答してください。",
+      "1行目: メインの文字のすぐ近くに見える記号・追加の単語をそのまま記述する（何も無ければ「なし」と書く）",
+      "2行目: 1行目の観察を踏まえて判断した結果。",
+      "　該当する記号・単語が見つかった場合は、該当する系列ブランド名を上記の表記そのままで書く。",
+      `　見当たらない場合は「${parentBrandName}」とだけ書く。`,
     ].join("\n");
 
     const response = await fetch(geminiUrl(), {
@@ -131,7 +133,7 @@ export async function checkFamilyVariant(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [...imageParts, { text: prompt }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 50, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { temperature: 0, maxOutputTokens: 300, thinkingConfig: { thinkingBudget: 200 } },
       }),
     });
 
@@ -140,7 +142,9 @@ export async function checkFamilyVariant(
     const content = extractText(json);
     if (!content) return null;
 
-    const result = content.trim();
+    // 1行目は観察の書き出し、判断結果は最後の非空行に出てくる想定。
+    const lines = content.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+    const result = lines[lines.length - 1] ?? "";
     return norm(result) === norm(parentBrandName) ? null : result;
   } catch {
     return null;

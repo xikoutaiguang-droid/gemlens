@@ -60,30 +60,39 @@ async function callGeminiVision(
         return normChild.startsWith(normParent) || normChild.endsWith(normParent);
       });
       if (children.length > 0) {
-        const variant = await checkFamilyVariant(
-          base64Images,
-          matched.brandName,
-          children.map((c) => c.brandName)
-        );
-        const familyCheckDebug = `候補=[${children.map((c) => c.brandName).join(", ")}] 応答=${variant ?? "(親ブランドのまま/null)"}`;
-        if (variant) {
-          // Geminiには候補一覧の表記通り返すよう指示しているが、実際には
-          // タグに書かれている通りの表記（例：「BEAMS+」「BEAMS＋」）でそのまま返してくることがある。
-          // 「+」「＋」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
-          // 部分一致も許容して探すことで、完全一致の失敗によるフォールバックを防ぐ。
-          const normVariant = normPlusVariant(variant);
-          const variantEntry = children.find((c) => {
-            const normChild = normPlusVariant(c.brandName);
-            return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
-          });
-          if (variantEntry) {
-            return {
-              brandName: variantEntry.brandName,
-              perceivedText: perceived,
-              matchSource: "family-variant-check",
-              familyCheckDebug,
-            };
+        // タグ上の小さな記号（例：BEAMSの「+」）は、実写では色や大きさの都合で
+        // AIの視覚的な再確認でも見落とされることがある（実測で確認済み）。
+        // 一方でVision APIのWeb検出結果（類似画像のラベル・出品タイトル）には、
+        // 過去に他の出品者が同じ商品を正しく表記した結果として系列ブランド名が
+        // 既に含まれていることがあるため、追加コスト無しでまずこちらを確認する。
+        const webHintsBlob = normPlusVariant([...visionResult.webNames, ...visionResult.pageTitles].join(" "));
+        let variantEntry = children.find((c) => webHintsBlob.includes(normPlusVariant(c.brandName)));
+        let visualResult: string | null = null;
+        let matchedVia: "family-web-hint" | "family-variant-check" | null = variantEntry ? "family-web-hint" : null;
+
+        if (!variantEntry) {
+          visualResult = await checkFamilyVariant(base64Images, matched.brandName, children.map((c) => c.brandName));
+          if (visualResult) {
+            // Geminiには候補一覧の表記通り返すよう指示しているが、実際には
+            // タグに書かれている通りの表記（例：「BEAMS+」「BEAMS＋」）でそのまま返してくることがある。
+            // 「+」「＋」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
+            // 部分一致も許容して探すことで、完全一致の失敗によるフォールバックを防ぐ。
+            const normVariant = normPlusVariant(visualResult);
+            variantEntry = children.find((c) => {
+              const normChild = normPlusVariant(c.brandName);
+              return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
+            });
+            if (variantEntry) matchedVia = "family-variant-check";
           }
+        }
+
+        const familyCheckDebug =
+          `候補=[${children.map((c) => c.brandName).join(", ")}] ` +
+          `Web候補一致=${matchedVia === "family-web-hint" ? variantEntry!.brandName : "なし"} ` +
+          `視覚チェック応答=${visualResult ?? (matchedVia === "family-web-hint" ? "(未実施)" : "(親ブランドのまま/null)")}`;
+
+        if (variantEntry && matchedVia) {
+          return { brandName: variantEntry.brandName, perceivedText: perceived, matchSource: matchedVia, familyCheckDebug };
         }
         return { brandName: matched.brandName, perceivedText: perceived, matchSource: "gemini-text", familyCheckDebug };
       }
