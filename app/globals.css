@@ -69,6 +69,11 @@ header .logo-text {
   padding: 5px 10px;
   flex-shrink: 0;
   white-space: nowrap;
+  text-decoration: none;
+}
+.usage-badge.badge-inactive {
+  color: #888;
+  background: rgba(255,255,255,0.05);
 }
 .history-link {
   font-size: 10px;

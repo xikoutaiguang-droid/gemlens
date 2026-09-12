@@ -324,6 +324,7 @@ export default function HomePage() {
   const [firstLaunchInput, setFirstLaunchInput] = useState("");
   const [firstLaunchError, setFirstLaunchError] = useState("");
   const [firstLaunchSubmitting, setFirstLaunchSubmitting] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -352,6 +353,11 @@ export default function HomePage() {
     activateDeveloperKeyFromUrl();
 
     const splashTimer = setTimeout(() => setShowSplash(false), 2600);
+
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as unknown as { standalone?: boolean }).standalone === true
+    );
 
     // 「ホーム画面に追加して連携」ボタンから追加された場合、マニフェストの
     // start_urlにコードが埋め込まれてこのURLに付与されている。これが
@@ -630,6 +636,13 @@ export default function HomePage() {
         <div className="header-right">
           <Link href="/history" className="history-link" onClick={(e) => e.stopPropagation()}>
             マイページ
+          </Link>
+          <Link
+            href="/history"
+            className={isStandalone ? "usage-badge" : "usage-badge badge-inactive"}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isStandalone ? "連携済み" : "未連携"}
           </Link>
           {usage && plan === "free" && (
             <span className="usage-badge">
