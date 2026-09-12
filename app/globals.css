@@ -21,8 +21,11 @@ body {
 }
 
 #app-root {
-  height: 100vh;
-  height: 100dvh; /* モバイルのアドレスバー分の誤差を補正（100vhだと下部ボタンが画面外に出る） */
+  min-height: 100vh;
+  min-height: 100dvh; /* モバイルのアドレスバー分の誤差を補正（100vhだと下部ボタンが画面外に出る）。
+    heightではなくmin-heightにし、セーフエリア分の内側パディングが必要な端末では
+    100dvhより少しだけ伸びられるようにする（固定heightだと中の要素が押し縮められ、
+    実際の画面下端との間に隙間ができ、bodyの背景色が透けて見えてしまう）。 */
   display: flex;
   flex-direction: column;
   width: 100%;
