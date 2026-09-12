@@ -604,3 +604,12 @@ input.field-input[type="date"] {
 .legal-contact {
   font-weight: 700; background: #fafafa; border: 2px dashed var(--gray); padding: 10px 12px;
 }
+
+.ad-slot {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 90px; width: 100%; margin: 16px 0;
+  border: 2px dashed #ccc; background: #fafafa;
+}
+.ad-slot-label {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray);
+}

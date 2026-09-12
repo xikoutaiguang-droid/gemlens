@@ -14,6 +14,7 @@ import {
 } from "../lib/clientUtils";
 import { isValidAccountCode, normalizeAccountCode } from "../lib/accountCode";
 import ItemCategoryPicker from "./components/ItemCategoryPicker";
+import AdSlot from "./components/AdSlot";
 
 const MAX_IMAGES = 3;
 const SCAN_TIMEOUT_MS = 20000;
@@ -679,6 +680,7 @@ export default function HomePage() {
               <Link href="/legal" className="idle-legal-link">
                 利用規約・プライバシーポリシー
               </Link>
+              <AdSlot plan={plan} />
             </div>
           )}
 

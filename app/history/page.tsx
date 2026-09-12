@@ -11,6 +11,7 @@ import {
 } from "../../lib/clientUtils";
 import { formatAccountCodeForDisplay, isValidAccountCode, normalizeAccountCode } from "../../lib/accountCode";
 import ItemCategoryPicker from "../components/ItemCategoryPicker";
+import AdSlot from "../components/AdSlot";
 
 interface HistoryRecord {
   id: string;
@@ -470,6 +471,8 @@ export default function HistoryPage() {
               </>
             )}
           </div>
+
+          <AdSlot plan={plan} />
 
           {loading ? (
             <div style={{ textAlign: "center", color: "var(--gray)", padding: 40 }}>読み込み中...</div>

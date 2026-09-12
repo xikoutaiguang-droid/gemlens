@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { normalizeAccountCode, isValidAccountCode, formatAccountCodeForDisplay } from "../../lib/accountCode";
+import AdSlot from "../components/AdSlot";
 
 interface AccountInfo {
   plan: "free" | "standard" | "premium";
@@ -155,6 +156,8 @@ export default function OfficialSitePage() {
             </div>
           )}
         </section>
+
+        <AdSlot />
       </div>
     </div>
   );
