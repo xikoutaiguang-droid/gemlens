@@ -5,11 +5,14 @@ import Link from "next/link";
 import {
   activateDeveloperKeyFromUrl,
   compressImageFile,
+  getAccountCode,
   getDeveloperKey,
   getOrCreateAccountCode,
   resizeAndCompress,
   resizeDataUrl,
+  setAccountCode as persistAccountCode,
 } from "../lib/clientUtils";
+import { isValidAccountCode, normalizeAccountCode } from "../lib/accountCode";
 import ItemCategoryPicker from "./components/ItemCategoryPicker";
 
 const MAX_IMAGES = 3;
@@ -317,6 +320,10 @@ export default function HomePage() {
   const [historySubmitting, setHistorySubmitting] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showFirstLaunchPrompt, setShowFirstLaunchPrompt] = useState(false);
+  const [firstLaunchInput, setFirstLaunchInput] = useState("");
+  const [firstLaunchError, setFirstLaunchError] = useState("");
+  const [firstLaunchSubmitting, setFirstLaunchSubmitting] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -325,15 +332,11 @@ export default function HomePage() {
   const scanRequestIdRef = useRef(0);
   const lastImagesRef = useRef<string[] | null>(null);
 
-  useEffect(() => {
-    activateDeveloperKeyFromUrl();
-
-    const splashTimer = setTimeout(() => setShowSplash(false), 2600);
-
+  const fetchUsage = useCallback((accountCode: string) => {
     const devKey = getDeveloperKey();
     const params = new URLSearchParams();
     if (devKey) params.set("devKey", devKey);
-    params.set("accountCode", getOrCreateAccountCode());
+    params.set("accountCode", accountCode);
     fetch("/api/usage?" + params.toString())
       .then((res) => res.json())
       .then((data: { usage?: UsageInfo; plan?: PlanLevel }) => {
@@ -343,15 +346,53 @@ export default function HomePage() {
       .catch(() => {
         // 残り回数の取得に失敗しても本体機能には影響させない
       });
+  }, []);
+
+  useEffect(() => {
+    activateDeveloperKeyFromUrl();
+
+    const splashTimer = setTimeout(() => setShowSplash(false), 2600);
+
+    // iOSでは「ホーム画面に追加」したアプリと通常のSafari/Chromeタブとで
+    // localStorageの保存領域が分離されることがあり、この端末では復元コードが
+    // 見つからない＝新規ユーザーとは限らない（別の保存領域に既存のコードがある
+    // だけの可能性がある）。自動的に新しいコードを発行する前に、
+    // 既存のコードを持っていないか必ず確認する。
+    const existing = getAccountCode();
+    if (existing) {
+      fetchUsage(existing);
+    } else {
+      setShowFirstLaunchPrompt(true);
+    }
 
     return () => clearTimeout(splashTimer);
-  }, []);
+  }, [fetchUsage]);
 
   const scrollTop = useCallback(() => {
     setTimeout(() => {
       if (resultPanelRef.current) resultPanelRef.current.scrollTop = 0;
     }, 50);
   }, []);
+
+  function submitFirstLaunchRestore() {
+    const normalized = normalizeAccountCode(firstLaunchInput);
+    setFirstLaunchError("");
+    if (!isValidAccountCode(normalized)) {
+      setFirstLaunchError("コードの形式が正しくありません");
+      return;
+    }
+    setFirstLaunchSubmitting(true);
+    persistAccountCode(normalized);
+    setShowFirstLaunchPrompt(false);
+    setFirstLaunchSubmitting(false);
+    fetchUsage(normalized);
+  }
+
+  function startFreshAccount() {
+    const code = getOrCreateAccountCode();
+    setShowFirstLaunchPrompt(false);
+    fetchUsage(code);
+  }
 
   const stopLoadingAnim = useCallback(() => {
     if (loadingTimerRef.current) {
@@ -910,6 +951,62 @@ export default function HomePage() {
           }}
           onClose={() => setHistoryCameraOpen(false)}
         />
+      )}
+
+      {showFirstLaunchPrompt && (
+        <div className="modal-overlay">
+          <div className="sheet-box">
+            <div className="modal-header">
+              <div className="modal-names">
+                <div id="modal-brand">はじめに</div>
+              </div>
+            </div>
+            <div className="modal-divider" />
+            <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
+              以前に発行された12桁の復元コードをお持ちですか？
+              <br />
+              （ホーム画面に追加したアプリと、通常のブラウザとで別々に保存されるため、
+              以前の仕入れ記録を引き継ぐにはコードの入力が必要です）
+            </div>
+            <div className="field">
+              <label className="field-label">復元コード（お持ちの場合）</label>
+              <input
+                className="field-input"
+                value={firstLaunchInput}
+                onChange={(e) => setFirstLaunchInput(e.target.value)}
+                placeholder="XXXX-XXXX-XXXX"
+                disabled={firstLaunchSubmitting}
+              />
+              {firstLaunchError && <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{firstLaunchError}</div>}
+            </div>
+            <button
+              type="button"
+              className="btn btn-submit"
+              onClick={submitFirstLaunchRestore}
+              disabled={firstLaunchSubmitting || !firstLaunchInput.trim()}
+              style={{ marginTop: 12 }}
+            >
+              このコードで復元する
+            </button>
+            <button
+              type="button"
+              onClick={startFreshAccount}
+              disabled={firstLaunchSubmitting}
+              style={{
+                marginTop: 10,
+                width: "100%",
+                background: "none",
+                border: "none",
+                color: "var(--gray)",
+                fontSize: 12,
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+            >
+              コードは無い（新しく始める）
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

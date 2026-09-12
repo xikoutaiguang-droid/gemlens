@@ -574,6 +574,9 @@ export default function HistoryPage() {
             <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 6, lineHeight: 1.6 }}>
               このコードを紛失すると記録に二度とアクセスできなくなります。メモ帳等に控えておくか、
               上部の「CSVエクスポート」で定期的にバックアップを取ることをおすすめします。
+              <br />
+              ※iOSでは「ホーム画面に追加」したアプリと通常のブラウザとでコードの保存場所が
+              別になることがあります。ホーム画面に追加する前に、必ずこのコードを控えておいてください。
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label className="field-label">別の端末のコードを復元</label>
