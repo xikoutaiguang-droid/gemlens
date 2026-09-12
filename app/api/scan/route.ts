@@ -65,7 +65,16 @@ async function callGeminiVision(
           children.map((c) => c.brandName)
         );
         if (variant) {
-          const variantEntry = brandEntries.find((e) => norm(e.brandName) === norm(variant));
+          // Geminiには候補一覧の表記通り返すよう指示しているが、実際には
+          // タグに書かれている通りの表記（例：「BEAMS+」）でそのまま返してくることがある。
+          // 「+」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
+          // 部分一致も許容して探すことで、完全一致の失敗によるフォールバックを防ぐ。
+          const normPlus = (s: string) => norm(s).replace(/\+/g, "plus");
+          const normVariant = normPlus(variant);
+          const variantEntry = children.find((c) => {
+            const normChild = normPlus(c.brandName);
+            return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
+          });
           if (variantEntry) {
             return { brandName: variantEntry.brandName, perceivedText: perceived, matchSource: "family-variant-check" };
           }
