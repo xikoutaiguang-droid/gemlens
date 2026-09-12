@@ -571,15 +571,15 @@ export default function HomePage() {
         <span className="logo-text">GemLens</span>
         <div className="header-right">
           <Link href="/history" className="history-link" onClick={(e) => e.stopPropagation()}>
-            履歴
-          </Link>
-          <Link href="/upgrade" className="history-link" onClick={(e) => e.stopPropagation()}>
-            {plan === "premium" ? "プレミアム" : plan === "standard" ? "スタンダード" : "プラン"}
+            マイページ
           </Link>
           {usage && plan === "free" && (
             <span className="usage-badge">
               {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
             </span>
+          )}
+          {plan !== "free" && (
+            <span className="usage-badge">{plan === "premium" ? "プレミアム" : "スタンダード"}</span>
           )}
         </div>
       </header>

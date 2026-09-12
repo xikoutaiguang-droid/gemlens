@@ -54,6 +54,7 @@ function daysBetween(fromDateStr: string, toDateStr: string): number {
 
 export default function HistoryPage() {
   const [accountCode, setAccountCodeState] = useState<string | null>(null);
+  const [plan, setPlan] = useState<"free" | "standard" | "premium">("free");
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,6 +99,15 @@ export default function HistoryPage() {
     const threshold = getStaleThresholdDays();
     setStaleThreshold(threshold);
     setStaleThresholdInput(String(threshold));
+
+    fetch(`/api/usage?accountCode=${encodeURIComponent(code)}`)
+      .then((res) => res.json())
+      .then((data: { plan?: "free" | "standard" | "premium" }) => {
+        if (data.plan) setPlan(data.plan);
+      })
+      .catch(() => {
+        // プラン取得に失敗しても本体機能には影響させない
+      });
   }, [loadHistory]);
 
   function handleStaleThresholdChange(value: string) {
@@ -330,12 +340,33 @@ export default function HistoryPage() {
           <span className="logo-text">GemLens</span>
         </Link>
         <div className="header-right">
-          <span className="usage-badge">履歴</span>
+          <span className="usage-badge">マイページ</span>
         </div>
       </header>
 
       <div className="container">
         <div className="result-panel">
+          <div className="account-code-box" style={{ marginBottom: 20 }}>
+            <span>
+              現在のプラン：
+              <strong>{plan === "premium" ? "プレミアム" : plan === "standard" ? "スタンダード" : "無料"}</strong>
+            </span>
+            <Link
+              href="/upgrade"
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "6px 12px",
+                border: "2px solid var(--black)",
+                background: "white",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              {plan === "free" ? "プランを見る" : "管理・変更する"}
+            </Link>
+          </div>
+
           {loading ? (
             <div style={{ textAlign: "center", color: "var(--gray)", padding: 40 }}>読み込み中...</div>
           ) : records.length === 0 ? (
