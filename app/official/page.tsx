@@ -29,7 +29,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   );
 }
 
-function PhoneChrome({ children, footer }: { children: React.ReactNode; footer: string }) {
+function PhoneChrome({ children, footer }: { children: React.ReactNode; footer: React.ReactNode }) {
   return (
     <div className="official-phone">
       <div className="official-phone-header">
@@ -50,17 +50,39 @@ function PhoneChrome({ children, footer }: { children: React.ReactNode; footer: 
         <span className="logo-text">GemLens</span>
       </div>
       <div className="official-phone-body">{children}</div>
-      <div className="official-phone-footer">{footer}</div>
+      {footer}
     </div>
   );
 }
 
-// 実際のアプリ本体（app/page.tsx）の待機画面と同じクラス（globals.css）を再利用した
-// スクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
+// 実際のアプリ本体（app/page.tsx）の待機画面・撮影ボタンと同じクラス（globals.css）を
+// 再利用したスクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
 // 静止画ではなくアプリ本体と共通のCSSクラスでそのまま再現する。
 function AppPreview() {
   return (
-    <PhoneChrome footer="撮影する">
+    <PhoneChrome
+      footer={
+        <div className="official-phone-buttons">
+          <div className="btn-panel">
+            <button type="button" className="btn btn-camera">
+              <svg className="btn-icon" viewBox="0 0 24 24">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span>撮影する</span>
+            </button>
+            <button type="button" className="btn btn-gallery">
+              <svg className="btn-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <span>写真を選ぶ</span>
+            </button>
+          </div>
+        </div>
+      }
+    >
       <div id="idle-msg">
         <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
           <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
@@ -77,7 +99,7 @@ function AppPreview() {
 // 誤解のないよう見出しで明示する。
 function ResultPreview() {
   return (
-    <PhoneChrome footer="サンプル表示">
+    <PhoneChrome footer={<div className="official-phone-footer">サンプル表示</div>}>
       <div id="result-single" className="official-result-sample">
         <div className="single-header">
           <div className="single-names">

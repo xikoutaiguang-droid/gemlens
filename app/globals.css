@@ -714,39 +714,16 @@ input.field-input[type="date"] {
 
 .official-hero { overflow-x: hidden; }
 .official-phone-row {
-  display: flex; gap: 0; justify-content: center; align-items: center;
+  display: flex; gap: 10px; justify-content: center; align-items: flex-start;
   margin-top: 8px; flex-wrap: nowrap;
-  position: relative;
-  padding: 24px 20px 16px;
-}
-/* 背面に赤いカードを差し込み、スマホ画面が「奥行きのある1枚の絵」の中に
-   埋め込まれているように見せる（参考モックアップの重なりレイアウト再現） */
-.official-phone-row::before {
-  content: "";
-  position: absolute;
-  inset: 4px 14% 2px;
-  background: var(--red);
-  border-radius: 20px;
-  transform: rotate(-2deg);
-  z-index: 0;
 }
 .official-sample-caption {
   text-align: center; font-size: 10.5px; color: var(--official-muted); margin-top: 10px; letter-spacing: 0.3px;
 }
 
 .official-phone {
-  position: relative;
-  z-index: 1;
-  width: 142px; flex-shrink: 0; border: 3px solid var(--black); border-radius: 14px;
-  overflow: hidden; box-shadow: 0 18px 30px rgba(0,0,0,0.28), 0 3px 8px rgba(0,0,0,0.16);
-  background: white;
-}
-.official-phone-row > .official-phone:nth-child(1) {
-  transform: rotate(-3deg) translateY(6px);
-}
-.official-phone-row > .official-phone:nth-child(2) {
-  transform: rotate(2deg) translateY(-4px);
-  margin-left: -8px;
+  width: 148px; flex-shrink: 0; border: 3px solid var(--black); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 16px 32px rgba(0,0,0,0.14); background: white;
 }
 .official-phone-header {
   background: var(--black); color: white; display: flex; align-items: center; gap: 5px;
@@ -784,3 +761,12 @@ input.field-input[type="date"] {
   background: var(--black); color: white; text-align: center; padding: 10px;
   font-size: 11px; font-weight: 700;
 }
+
+/* 待機画面プレビューの撮影ボタンは実物の.btn-panelをそのまま流用し、
+   スマホプレビューの縮小サイズに合わせて寸法だけ縮小する */
+.official-phone-buttons { padding: 8px; }
+.official-phone-buttons .btn-panel { gap: 5px; }
+.official-phone-buttons .btn {
+  padding: 7px 3px; font-size: 7.5px; letter-spacing: 0.2px; gap: 3px; border-width: 1.5px; white-space: nowrap;
+}
+.official-phone-buttons .btn-icon { width: 10px; height: 10px; stroke-width: 2; }
