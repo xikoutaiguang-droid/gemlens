@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# raw source assets not meant to be published as-is (e.g. uncropped screenshots)
+/.assets-src/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

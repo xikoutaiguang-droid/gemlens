@@ -728,20 +728,10 @@ input.field-input[type="date"] {
 .official-highlight-t { font-size: 13.5px; font-weight: 700; color: var(--official-ink); margin-bottom: 2px; }
 .official-highlight-d { font-size: 12px; color: var(--official-muted); line-height: 1.6; }
 
-/* アプリ本体（app/page.tsx）のヘッダー〜操作パネルまでを、縮小せず実寸のクラスで
-   そのまま再現するスクリーンプレビュー。実物と食い違うスクリーンショットにならないよう
-   静止画は使わず、共通のCSSクラスで再現する。2画面は横に並べず縦に積んで実寸を保つ。 */
-.official-screen-row {
-  display: flex; flex-direction: column; align-items: center; gap: 28px;
-  margin: 8px 0 0;
-  width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-  padding: 0 4px; box-sizing: border-box;
-}
-.official-screen {
-  display: flex; flex-direction: column;
-  width: 100%; max-width: 420px; height: 700px; flex-shrink: 0;
-  border: 2px solid var(--black); border-radius: 10px;
-  overflow: hidden; background: #f2f2f2;
+/* 実機の操作画面をそのまま撮ったGIF（上部ステータスバーのみ除去）をメイン画像として表示する。 */
+.official-demo {
+  display: block; width: 100%; max-width: 320px; margin: 24px auto 0;
+  border: 2px solid var(--black); border-radius: 10px; overflow: hidden;
   box-shadow: 0 14px 28px rgba(0,0,0,0.14);
 }
-.official-screen header { padding-top: 10px; padding-left: 14px; padding-right: 14px; }
+.official-demo img { display: block; width: 100%; height: auto; }
