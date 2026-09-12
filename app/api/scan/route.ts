@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { callVisionApi, type VisionResult } from "@/lib/vision";
 import { loadBrandEntries } from "@/lib/brands";
-import { readBrandTextFromImage, guessBrandFromLogo, callGeminiAdvice, type LogoGuessResult, type MarketAdvice } from "@/lib/gemini";
+import {
+  readBrandTextFromImage,
+  guessBrandFromLogo,
+  callGeminiAdvice,
+  checkFamilyVariant,
+  type LogoGuessResult,
+  type MarketAdvice,
+} from "@/lib/gemini";
 import { matchBrandName, matchByKeywords, norm, type BrandEntry } from "@/lib/matching";
 import { isProUser } from "@/lib/pro";
 import { checkAndIncrementUsage, type UsageResult } from "@/lib/rateLimit";
@@ -38,6 +45,32 @@ async function callGeminiVision(
   if (perceived) {
     const matched = matchBrandName(perceived, brandEntries);
     if (matched) {
+      // 親ブランド名に一致した場合、見落としやすい小さな記号・追加語で区別される
+      // 系列子ブランド（例：BEAMS+、BEAMS F）が無いか念のため視覚的に再確認する。
+      // parentBrand欄はスプレッドシート側の入力が一貫しておらず（例：BEAMS PLUS/BEAMS F/
+      // BEAMS GOLFは未設定、Ray BEAMS/Demi-Luxe BEAMSのみ設定済み）、
+      // この欄だけに頼ると肝心の候補が漏れるため、ブランド名のパターン一致も併用する。
+      const normParent = norm(matched.brandName);
+      const children = brandEntries.filter((e) => {
+        const normChild = norm(e.brandName);
+        if (normChild === normParent) return false;
+        if (e.parentBrand && norm(e.parentBrand) === normParent) return true;
+        if (normChild.length <= normParent.length) return false;
+        return normChild.startsWith(normParent) || normChild.endsWith(normParent);
+      });
+      if (children.length > 0) {
+        const variant = await checkFamilyVariant(
+          base64Images,
+          matched.brandName,
+          children.map((c) => c.brandName)
+        );
+        if (variant) {
+          const variantEntry = brandEntries.find((e) => norm(e.brandName) === norm(variant));
+          if (variantEntry) {
+            return { brandName: variantEntry.brandName, perceivedText: perceived, matchSource: "family-variant-check" };
+          }
+        }
+      }
       return { brandName: matched.brandName, perceivedText: perceived, matchSource: "gemini-text" };
     }
 

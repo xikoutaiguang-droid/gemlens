@@ -1,4 +1,4 @@
-import type { BrandEntry } from "./matching";
+import { norm, type BrandEntry } from "./matching";
 import type { VisionResult } from "./vision";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
@@ -92,6 +92,56 @@ export async function readBrandTextFromImage(
 
     const result = content.trim();
     return result === "" || result === "不明" ? null : result;
+  } catch {
+    return null;
+  }
+}
+
+// Step1.5: OCRが親ブランド名（例：BEAMS）に一致した場合の再確認。
+// 系列子ブランド（例：BEAMS+、BEAMS F）は、メインの文字の近くに小さな記号・追加の単語が
+// 添えられているだけで区別されることが多く、1回目の文字起こしでは見落とされやすい
+// （「+」が装飾的なロゴマークに見え、文字として認識されないなど）。
+// 親ブランドに一致した場合のみ、追加で1回だけ視覚的に再確認する。
+export async function checkFamilyVariant(
+  base64Images: string[],
+  parentBrandName: string,
+  siblingNames: string[]
+): Promise<string | null> {
+  if (siblingNames.length === 0) return null;
+  try {
+    const imageParts = imagesToParts(base64Images);
+    const prompt = [
+      `このタグには「${parentBrandName}」という文字が書かれていることは確認済みです。`,
+      `ただし「${parentBrandName}」には、メインの文字のすぐ近くに小さな記号や追加の単語が`,
+      "添えられることで区別される、以下のような系列ブランドが存在します。",
+      siblingNames.join("、"),
+      "",
+      "画像をもう一度注意深く確認してください。メインの文字のすぐ近く（右上・下など）に、",
+      "小さな「+」のような記号や、上記のいずれかを示す追加の単語が無いか確認してください。",
+      "小さく装飾的に見えるためロゴの飾りだと誤解しやすいですが、これらはブランド名の一部です。",
+      "",
+      "【回答形式】厳守",
+      "上記のいずれかに一致する記号・単語が見つかった場合は、該当する系列ブランド名を",
+      "上記の表記そのままで1行だけ返してください。",
+      `見当たらない場合は「${parentBrandName}」とだけ返してください。`,
+    ].join("\n");
+
+    const response = await fetch(geminiUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [...imageParts, { text: prompt }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 50, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+
+    if (!response.ok) return null;
+    const json = (await response.json()) as GeminiApiResponse;
+    const content = extractText(json);
+    if (!content) return null;
+
+    const result = content.trim();
+    return norm(result) === norm(parentBrandName) ? null : result;
   } catch {
     return null;
   }
