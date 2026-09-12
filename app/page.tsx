@@ -325,6 +325,7 @@ export default function HomePage() {
   const [firstLaunchError, setFirstLaunchError] = useState("");
   const [firstLaunchSubmitting, setFirstLaunchSubmitting] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [showStandaloneNoCodePrompt, setShowStandaloneNoCodePrompt] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -354,10 +355,10 @@ export default function HomePage() {
 
     const splashTimer = setTimeout(() => setShowSplash(false), 2600);
 
-    setIsStandalone(
+    const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-        (navigator as unknown as { standalone?: boolean }).standalone === true
-    );
+      (navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
 
     // 「ホーム画面に追加して連携」ボタンから追加された場合、マニフェストの
     // start_urlにコードが埋め込まれてこのURLに付与されている。これが
@@ -384,6 +385,11 @@ export default function HomePage() {
     const existing = getAccountCode();
     if (existing) {
       fetchUsage(existing);
+    } else if (standalone) {
+      // ホーム画面アプリ単体でその場のコードを新規発行してしまうと、
+      // 「連携」を経由していないのに連携済み扱いになってしまう。
+      // ここでは新規発行させず、既存コードの入力かブラウザでの連携に誘導する。
+      setShowStandaloneNoCodePrompt(true);
     } else {
       setShowFirstLaunchPrompt(true);
     }
@@ -407,6 +413,7 @@ export default function HomePage() {
     setFirstLaunchSubmitting(true);
     persistAccountCode(normalized);
     setShowFirstLaunchPrompt(false);
+    setShowStandaloneNoCodePrompt(false);
     setFirstLaunchSubmitting(false);
     fetchUsage(normalized);
   }
@@ -1035,6 +1042,65 @@ export default function HomePage() {
             >
               コードは無い（新しく始める）
             </button>
+          </div>
+        </div>
+      )}
+
+      {showStandaloneNoCodePrompt && (
+        <div className="modal-overlay">
+          <div className="sheet-box">
+            <div className="modal-header">
+              <div className="modal-names">
+                <div id="modal-brand">連携が必要です</div>
+              </div>
+            </div>
+            <div className="modal-divider" />
+            <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
+              このホーム画面アプリはまだ連携されていません。
+              <br />
+              以前に発行された12桁の復元コードをお持ちの場合は下に入力してください。
+              お持ちでない場合は、ブラウザで開いて「連携」から追加し直してください。
+            </div>
+            <div className="field">
+              <label className="field-label">復元コード（お持ちの場合）</label>
+              <input
+                className="field-input"
+                value={firstLaunchInput}
+                onChange={(e) => setFirstLaunchInput(e.target.value)}
+                placeholder="XXXX-XXXX-XXXX"
+                disabled={firstLaunchSubmitting}
+              />
+              {firstLaunchError && <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{firstLaunchError}</div>}
+            </div>
+            <button
+              type="button"
+              className="btn btn-submit"
+              onClick={submitFirstLaunchRestore}
+              disabled={firstLaunchSubmitting || !firstLaunchInput.trim()}
+              style={{ marginTop: 12 }}
+            >
+              このコードで復元する
+            </button>
+            <a
+              href={typeof window !== "undefined" ? window.location.origin : "/"}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                marginTop: 10,
+                display: "block",
+                width: "100%",
+                textAlign: "center",
+                padding: "12px",
+                background: "var(--black)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: 13,
+                textDecoration: "none",
+                boxSizing: "border-box",
+              }}
+            >
+              ブラウザで開いて連携する
+            </a>
           </div>
         </div>
       )}
