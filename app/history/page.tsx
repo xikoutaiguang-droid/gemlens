@@ -349,7 +349,7 @@ export default function HistoryPage() {
           <div className="account-code-box" style={{ marginBottom: 20 }}>
             <span>
               現在のプラン：
-              <strong>{plan === "premium" ? "プレミアム" : plan === "standard" ? "スタンダード" : "無料"}</strong>
+              <strong>{plan === "premium" ? "PREMIUM" : plan === "standard" ? "STANDARD" : "FREE"}</strong>
             </span>
             <Link
               href="/upgrade"

@@ -9,13 +9,13 @@ type PlanLevel = "free" | "standard" | "premium";
 const PLANS: { id: "standard" | "premium"; name: string; price: string; trial?: string; features: string[] }[] = [
   {
     id: "standard",
-    name: "スタンダード",
+    name: "STANDARD",
     price: "¥500 / 月",
     features: ["1日のスキャン回数上限を撤廃"],
   },
   {
     id: "premium",
-    name: "プレミアム",
+    name: "PREMIUM",
     price: "¥980 / 月",
     trial: "7日間無料でお試しいただけます",
     features: ["1日のスキャン回数上限を撤廃", "Google検索連携による高精度ブランド判定", "画像類似検索フォールバック（ロゴのみのタグに強い）"],
@@ -130,7 +130,7 @@ export default function UpgradePage() {
         {currentPlan && currentPlan !== "free" && (
           <div style={{ marginBottom: 24, padding: 16, border: "2px solid var(--black)" }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>
-              現在のプラン：{currentPlan === "premium" ? "プレミアム" : "スタンダード"}
+              現在のプラン：{currentPlan === "premium" ? "PREMIUM" : "STANDARD"}
             </div>
             <button
               onClick={handleManage}

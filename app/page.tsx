@@ -579,7 +579,7 @@ export default function HomePage() {
             </span>
           )}
           {plan !== "free" && (
-            <span className="usage-badge">{plan === "premium" ? "プレミアム" : "スタンダード"}</span>
+            <span className="usage-badge">{plan === "premium" ? "PREMIUM" : "STANDARD"}</span>
           )}
         </div>
       </header>
