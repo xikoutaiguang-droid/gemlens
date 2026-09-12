@@ -22,10 +22,11 @@ body {
 
 #app-root {
   min-height: 100vh;
-  min-height: 100dvh; /* モバイルのアドレスバー分の誤差を補正（100vhだと下部ボタンが画面外に出る）。
-    heightではなくmin-heightにし、セーフエリア分の内側パディングが必要な端末では
-    100dvhより少しだけ伸びられるようにする（固定heightだと中の要素が押し縮められ、
-    実際の画面下端との間に隙間ができ、bodyの背景色が透けて見えてしまう）。 */
+  min-height: 100dvh; /* モバイルのアドレスバー分の誤差を補正（100vhだと下部ボタンが画面外に出る） */
+  /* 内側の.containerに安全エリア分のpaddingを付けても、.containerはflex:1の
+     子要素でしかないためこの外側のボックス自体の大きさには影響しない。
+     このボックス自体をホームインジケーター分まで確実に伸ばすため、ここに直接付ける。 */
+  padding-bottom: env(safe-area-inset-bottom);
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -123,7 +124,6 @@ header .logo-text {
   display: flex;
   flex-direction: column;
   padding: 14px;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   gap: 12px;
   overflow: hidden;
   min-height: 0;
