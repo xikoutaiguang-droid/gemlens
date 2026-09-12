@@ -63,6 +63,15 @@ export default function OfficialSitePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // body側は#app-root画面（撮影・履歴）用にoverflow:hiddenが既定のため、
+  // このページ滞在中だけ通常のページスクロールに戻す（/legal等と同じ対応）。
+  useEffect(() => {
+    document.body.style.overflow = "auto";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   async function lookup(code: string) {
     const normalized = normalizeAccountCode(code);
     setError("");
