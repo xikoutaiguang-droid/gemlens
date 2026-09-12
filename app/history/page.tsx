@@ -55,6 +55,8 @@ function daysBetween(fromDateStr: string, toDateStr: string): number {
 export default function HistoryPage() {
   const [accountCode, setAccountCodeState] = useState<string | null>(null);
   const [plan, setPlan] = useState<"free" | "standard" | "premium">("free");
+  const [periodTab, setPeriodTab] = useState<"all" | "month">("all");
+  const [selectedMonth, setSelectedMonth] = useState(todayDateString().slice(0, 7));
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -287,14 +289,22 @@ export default function HistoryPage() {
   }, 0);
 
   const currentMonthPrefix = todayDateString().slice(0, 7); // "YYYY-MM"
-  const thisMonthPurchasedCount = records.filter((r) =>
-    toDateOnly(r.purchasedAt ?? r.createdAt).startsWith(currentMonthPrefix)
-  ).length;
-  const thisMonthProfit = records.reduce((sum, r) => {
-    if (!r.soldAt || !toDateOnly(r.soldAt).startsWith(currentMonthPrefix)) return sum;
-    if (r.purchasePrice == null || r.salePrice == null) return sum;
-    return sum + (r.salePrice - r.purchasePrice);
-  }, 0);
+
+  // 記録が存在する月の一覧（新しい月順）。当月にまだ記録が無くても選べるよう必ず含める。
+  const monthOptions = Array.from(
+    new Set([currentMonthPrefix, ...records.map((r) => toDateOnly(r.purchasedAt ?? r.createdAt).slice(0, 7))])
+  ).sort((a, b) => b.localeCompare(a));
+
+  function purchasedCountInMonth(monthPrefix: string): number {
+    return records.filter((r) => toDateOnly(r.purchasedAt ?? r.createdAt).startsWith(monthPrefix)).length;
+  }
+  function profitInMonth(monthPrefix: string): number {
+    return records.reduce((sum, r) => {
+      if (!r.soldAt || !toDateOnly(r.soldAt).startsWith(monthPrefix)) return sum;
+      if (r.purchasePrice == null || r.salePrice == null) return sum;
+      return sum + (r.salePrice - r.purchasePrice);
+    }, 0);
+  }
 
   const filteredRecords = records.filter((r) => {
     const q = searchQuery.trim().toLowerCase();
@@ -359,40 +369,66 @@ export default function HistoryPage() {
 
             {!loading && records.length > 0 && (
               <>
-                <div className="history-summary">
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">合計</div>
-                    <div className="history-summary-value">{records.length}件</div>
-                  </div>
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">在庫</div>
-                    <div className="history-summary-value">{inStockCount}件</div>
-                  </div>
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">売却済</div>
-                    <div className="history-summary-value">{soldRecords.length}件</div>
-                  </div>
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">合計利益</div>
-                    <div className="history-summary-value profit">{yen(totalProfit)}</div>
-                  </div>
+                <div className="period-tabs">
+                  <button
+                    className={`period-tab${periodTab === "all" ? " active" : ""}`}
+                    onClick={() => setPeriodTab("all")}
+                  >
+                    全期間
+                  </button>
+                  <select
+                    className={`period-tab period-tab-select${periodTab === "month" ? " active" : ""}`}
+                    value={selectedMonth}
+                    onChange={(e) => {
+                      setSelectedMonth(e.target.value);
+                      setPeriodTab("month");
+                    }}
+                    onFocus={() => setPeriodTab("month")}
+                  >
+                    {monthOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {m.replace("-", "年")}月
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="history-month-row">
-                  <div className="history-month-label">今月の実績</div>
+                {periodTab === "all" ? (
+                  <div className="history-summary">
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">合計</div>
+                      <div className="history-summary-value">{records.length}件</div>
+                    </div>
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">在庫</div>
+                      <div className="history-summary-value">{inStockCount}件</div>
+                    </div>
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">売却済</div>
+                      <div className="history-summary-value">{soldRecords.length}件</div>
+                    </div>
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">合計利益</div>
+                      <div className="history-summary-value profit">{yen(totalProfit)}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="history-summary history-summary-secondary">
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">仕入れ件数</div>
+                      <div className="history-summary-value">{purchasedCountInMonth(selectedMonth)}件</div>
+                    </div>
+                    <div className="history-summary-item">
+                      <div className="history-summary-label">利益</div>
+                      <div className="history-summary-value profit">{yen(profitInMonth(selectedMonth))}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mypage-csv-row">
                   <button className="csv-export-link" onClick={exportCsv}>
                     CSVエクスポート
                   </button>
-                </div>
-                <div className="history-summary history-summary-secondary">
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">仕入れ件数</div>
-                    <div className="history-summary-value">{thisMonthPurchasedCount}件</div>
-                  </div>
-                  <div className="history-summary-item">
-                    <div className="history-summary-label">利益</div>
-                    <div className="history-summary-value profit">{yen(thisMonthProfit)}</div>
-                  </div>
                 </div>
               </>
             )}

@@ -34,7 +34,8 @@ header {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  height: 56px;
+  padding-top: env(safe-area-inset-top);
+  min-height: 56px;
   flex-shrink: 0;
   gap: 10px;
   cursor: pointer;
@@ -449,11 +450,17 @@ input[type="file"] { display: none; }
 .history-summary-value { font-size: clamp(13px, 2.4vw, 17px); font-weight: 700; color: var(--black); }
 .history-summary-value.profit { color: var(--red); }
 .history-summary-secondary { grid-template-columns: repeat(2, 1fr); padding-bottom: 0; border-bottom: none; margin-bottom: 0; }
-.history-month-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.history-month-label {
-  font-size: 10px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase;
-  font-weight: 700;
+
+.period-tabs { display: flex; margin-top: 14px; margin-bottom: 14px; border: 2px solid var(--black); }
+.period-tab {
+  flex: 1; text-align: center; padding: 8px; font-size: 11px; font-weight: 700;
+  background: white; color: var(--gray); border: none; cursor: pointer; appearance: none;
+  font-family: inherit;
 }
+.period-tab:first-child { border-right: 2px solid var(--black); }
+.period-tab.active { background: var(--black); color: white; }
+.period-tab-select { text-align: center; text-align-last: center; }
+.mypage-csv-row { text-align: right; margin-top: 12px; }
 .csv-export-link {
   font-size: 11px; font-weight: 700; text-decoration: underline; background: none; border: none;
   color: var(--black); cursor: pointer; padding: 0;
