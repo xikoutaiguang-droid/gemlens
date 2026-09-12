@@ -326,7 +326,6 @@ export default function HomePage() {
   const [firstLaunchSubmitting, setFirstLaunchSubmitting] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showStandaloneNoCodePrompt, setShowStandaloneNoCodePrompt] = useState(false);
-  const [siteUrlCopied, setSiteUrlCopied] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const resultPanelRef = useRef<HTMLDivElement>(null);
@@ -417,16 +416,6 @@ export default function HomePage() {
     setShowStandaloneNoCodePrompt(false);
     setFirstLaunchSubmitting(false);
     fetchUsage(normalized);
-  }
-
-  async function copySiteUrl() {
-    try {
-      await navigator.clipboard.writeText(window.location.origin);
-      setSiteUrlCopied(true);
-      setTimeout(() => setSiteUrlCopied(false), 2000);
-    } catch {
-      // クリップボード権限が無い環境では何もしない
-    }
   }
 
   function startFreshAccount() {
@@ -1093,26 +1082,30 @@ export default function HomePage() {
             </button>
             <div className="modal-divider" style={{ margin: "16px 0" }} />
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "var(--gray)", marginBottom: 8 }}>
-              お持ちでない場合：このアプリ内からは直接ブラウザを開けないため、
-              下のボタンでURLをコピーし、Safari（またはChrome）アプリを自分で開いて貼り付けてください。
-              そこでマイページの「ホーム画面に追加して連携」から追加し直せます。
+              お持ちでない場合：下のボタンから公式サイトを開いてください（別サイトなので、
+              このアプリからでも正しくSafari/Chromeが開きます）。公式サイトから本体アプリの
+              マイページに進み、「ホーム画面に追加して連携」を行ってください。
             </div>
-            <button
-              type="button"
-              onClick={copySiteUrl}
+            <a
+              href="https://gemlens-official.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
+                display: "block",
                 width: "100%",
+                textAlign: "center",
                 padding: "12px",
                 background: "white",
                 color: "var(--black)",
                 fontWeight: 700,
                 fontSize: 13,
                 border: "2px solid var(--black)",
-                cursor: "pointer",
+                textDecoration: "none",
+                boxSizing: "border-box",
               }}
             >
-              {siteUrlCopied ? "コピーしました" : "サイトのURLをコピー"}
-            </button>
+              公式サイトを開く
+            </a>
           </div>
         </div>
       )}
