@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { normalizeAccountCode, isValidAccountCode, formatAccountCodeForDisplay } from "../../lib/accountCode";
+import {
+  normalizeAccountCode,
+  isValidAccountCode,
+  formatAccountCodeForDisplay,
+  generateAccountCode,
+} from "../../lib/accountCode";
 import AdSlot from "../components/AdSlot";
 
 interface AccountInfo {
@@ -179,6 +184,7 @@ export default function OfficialSitePage() {
   const [lookedUpCode, setLookedUpCode] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [newCode, setNewCode] = useState<string | null>(null);
 
   // body側は#app-root画面（撮影・履歴）用にoverflow:hiddenが既定のため、
   // このページ滞在中だけ通常のページスクロールに戻す（/legal等と同じ対応）。
@@ -216,6 +222,13 @@ export default function OfficialSitePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 復元コードを持っていない新規ユーザー向けに、ここでその場でコードを発行する。
+  // このコードを ?code= 付きで本体アプリに渡すと、アプリ側で自動的に保存される
+  // （app/history/page.tsx 側の対応ロジックを参照）。
+  function startNewCode() {
+    setNewCode(generateAccountCode());
+  }
 
   return (
     <div className="official-page">
@@ -332,7 +345,19 @@ export default function OfficialSitePage() {
         <section className="official-section">
           <SectionHeading eyebrow="Check your account" title="マイページ（簡易確認）" />
           <div className="official-card">
-            {!lookedUpCode ? (
+            {newCode ? (
+              <div className="official-account-info">
+                <p className="official-card-note">
+                  新しい復元コードを発行しました。端末を切り替える際にも使うコードなので、控えておいてください。
+                </p>
+                <div>
+                  復元コード：<strong>{formatAccountCodeForDisplay(newCode)}</strong>
+                </div>
+                <a href={`${APP_URL}/history?code=${encodeURIComponent(newCode)}`} className="official-btn">
+                  このコードでアプリを開く
+                </a>
+              </div>
+            ) : !lookedUpCode ? (
               <>
                 <p className="official-card-note">復元コードを入力すると、現在のプランと登録日を確認できます。</p>
                 <input
@@ -345,6 +370,12 @@ export default function OfficialSitePage() {
                 <button className="official-btn" onClick={() => lookup(codeInput)} disabled={loading || !codeInput.trim()}>
                   {loading ? "確認中..." : "確認する"}
                 </button>
+                <p className="official-card-note" style={{ marginTop: 20, marginBottom: 8 }}>
+                  復元コードをお持ちでない方（はじめての方）はこちら
+                </p>
+                <button type="button" className="official-btn official-btn-ghost" onClick={startNewCode}>
+                  新しく復元コードを発行する
+                </button>
               </>
             ) : (
               <div className="official-account-info">
@@ -356,7 +387,7 @@ export default function OfficialSitePage() {
                   <strong>{info?.plan === "premium" ? "PREMIUM" : info?.plan === "standard" ? "STANDARD" : "FREE"}</strong>
                 </div>
                 {info?.firstSeenAt && <div>登録日：{formatDate(info.firstSeenAt)}</div>}
-                <a href={`${APP_URL}/history`} className="official-btn official-btn-ghost">
+                <a href={`${APP_URL}/history?code=${encodeURIComponent(lookedUpCode)}`} className="official-btn official-btn-ghost">
                   アプリのマイページを開く
                 </a>
               </div>

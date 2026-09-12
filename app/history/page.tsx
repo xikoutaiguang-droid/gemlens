@@ -105,7 +105,20 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
-    const code = getOrCreateAccountCode();
+    // 公式サイトで発行した復元コードをURLの?codeで引き継いだ場合、
+    // 最優先でこの端末のコードとして保存する（app/page.tsxの同ロジックと同様）。
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get("code");
+    let code: string;
+    if (codeFromUrl && isValidAccountCode(normalizeAccountCode(codeFromUrl))) {
+      code = normalizeAccountCode(codeFromUrl);
+      persistAccountCode(code);
+      urlParams.delete("code");
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
+      window.history.replaceState({}, "", cleanUrl);
+    } else {
+      code = getOrCreateAccountCode();
+    }
     setAccountCodeState(code);
     loadHistory(code);
     const threshold = getStaleThresholdDays();

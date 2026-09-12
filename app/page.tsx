@@ -1085,8 +1085,9 @@ export default function HomePage() {
             <div className="modal-divider" style={{ margin: "16px 0" }} />
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "var(--gray)", marginBottom: 8 }}>
               お持ちでない場合：下のボタンから公式サイトを開いてください（別サイトなので、
-              このアプリからでも正しくSafari/Chromeが開きます）。公式サイトから本体アプリの
-              マイページに進み、「ホーム画面に追加して連携」を行ってください。
+              このアプリからでも正しくSafari/Chromeが開きます）。公式サイトの「マイページ」で
+              復元コードを新しく発行し、表示されるボタンから本体アプリを開いてください。開いた
+              アプリの「マイページ」→「ホーム画面に追加して連携」で、この端末と連携できます。
             </div>
             <a
               href="https://gemlens-official.vercel.app/"
