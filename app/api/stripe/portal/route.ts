@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const accountCode: string | undefined = typeof body?.accountCode === "string" ? body.accountCode : undefined;
     if (!accountCode) {
-      return NextResponse.json({ success: false, message: "復元コードが必要です。" }, { status: 400 });
+      return NextResponse.json({ success: false, message: "IDコードが必要です。" }, { status: 400 });
     }
 
     const state = await getProStateByAccountCode(accountCode);

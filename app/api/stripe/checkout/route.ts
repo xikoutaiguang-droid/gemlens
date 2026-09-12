@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const plan: string | undefined = typeof body?.plan === "string" ? body.plan : undefined;
 
     if (!accountCode || !isValidAccountCode(accountCode)) {
-      return NextResponse.json({ success: false, message: "復元コードが不正です。" }, { status: 400 });
+      return NextResponse.json({ success: false, message: "IDコードが不正です。" }, { status: 400 });
     }
     if (plan !== "standard" && plan !== "premium") {
       return NextResponse.json({ success: false, message: "プランが不正です。" }, { status: 400 });

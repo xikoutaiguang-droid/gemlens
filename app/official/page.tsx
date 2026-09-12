@@ -1,23 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  normalizeAccountCode,
-  isValidAccountCode,
-  formatAccountCodeForDisplay,
-  generateAccountCode,
-} from "../../lib/accountCode";
+import { useEffect } from "react";
 import AdSlot from "../components/AdSlot";
-
-interface AccountInfo {
-  plan: "free" | "standard" | "premium";
-  firstSeenAt?: string;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-}
 
 const APP_URL = "https://gemlens-tawny.vercel.app";
 
@@ -35,16 +19,6 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 }
 
 export default function OfficialSitePage() {
-  const [codeInput, setCodeInput] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return new URLSearchParams(window.location.search).get("code") ?? "";
-  });
-  const [info, setInfo] = useState<AccountInfo | null>(null);
-  const [lookedUpCode, setLookedUpCode] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [newCode, setNewCode] = useState<string | null>(null);
-
   // body側は#app-root画面（撮影・履歴）用にoverflow:hiddenが既定のため、
   // このページ滞在中だけ通常のページスクロールに戻す（/legal等と同じ対応）。
   useEffect(() => {
@@ -54,63 +28,8 @@ export default function OfficialSitePage() {
     };
   }, []);
 
-  async function lookup(code: string) {
-    const normalized = normalizeAccountCode(code);
-    setError("");
-    if (!isValidAccountCode(normalized)) {
-      setError("コードの形式が正しくありません");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/usage?accountCode=${encodeURIComponent(normalized)}`);
-      const data = await res.json();
-      setInfo({ plan: data.plan ?? "free", firstSeenAt: data.firstSeenAt });
-      setLookedUpCode(normalized);
-    } catch {
-      setError("通信エラーが発生しました");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // URLに?codeが付いていれば自動で照会する
-  useEffect(() => {
-    if (codeInput && isValidAccountCode(normalizeAccountCode(codeInput))) {
-      lookup(codeInput);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 復元コードを持っていない新規ユーザー向けに、ここでその場でコードを発行する。
-  // このコードを ?code= 付きで本体アプリに渡すと、アプリ側で自動的に保存される
-  // （app/history/page.tsx 側の対応ロジックを参照）。
-  function startNewCode() {
-    setNewCode(generateAccountCode());
-  }
-
   return (
     <div className="official-page">
-      <header className="official-header">
-        <svg className="brand-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg" width="22" height="26">
-          <path d="M60,60 L130,110 L200,40 L270,110 L340,60 L400,190 L200,460 L0,190 Z" fill="white" stroke="black" strokeWidth="14" strokeLinejoin="round" />
-          <circle cx="200" cy="230" r="95" fill="black" />
-          <circle cx="200" cy="230" r="76" fill="white" />
-          <g fill="black">
-            <path d="M200,230 L200,160 A70,70 0 0,1 260,195 Z" />
-            <path d="M200,230 L260,195 A70,70 0 0,1 260,265 Z" />
-            <path d="M200,230 L260,265 A70,70 0 0,1 200,300 Z" />
-            <path d="M200,230 L200,300 A70,70 0 0,1 140,265 Z" />
-            <path d="M200,230 L140,265 A70,70 0 0,1 140,195 Z" />
-            <path d="M200,230 L140,195 A70,70 0 0,1 200,160 Z" />
-          </g>
-          <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
-        </svg>
-        <div className="logo-text" style={{ fontSize: 20 }}>
-          GemLens
-        </div>
-      </header>
-
       <div className="official-container">
         <section className="official-hero">
           <Eyebrow>Tag it. Know it.</Eyebrow>
@@ -206,63 +125,10 @@ export default function OfficialSitePage() {
         </section>
 
         <section className="official-section">
-          <SectionHeading eyebrow="Check your account" title="マイページ（簡易確認）" />
-          <div className="official-card">
-            {newCode ? (
-              <div className="official-account-info">
-                <p className="official-card-note">
-                  新しい復元コードを発行しました。端末を切り替える際にも使うコードなので、控えておいてください。
-                </p>
-                <div>
-                  復元コード：<strong>{formatAccountCodeForDisplay(newCode)}</strong>
-                </div>
-                <a href={`${APP_URL}/history?code=${encodeURIComponent(newCode)}`} className="official-btn">
-                  このコードでアプリを開く
-                </a>
-              </div>
-            ) : !lookedUpCode ? (
-              <>
-                <p className="official-card-note">復元コードを入力すると、現在のプランと登録日を確認できます。</p>
-                <input
-                  className="official-input"
-                  value={codeInput}
-                  onChange={(e) => setCodeInput(e.target.value)}
-                  placeholder="XXXX-XXXX-XXXX"
-                />
-                {error && <div className="official-error">{error}</div>}
-                <button className="official-btn" onClick={() => lookup(codeInput)} disabled={loading || !codeInput.trim()}>
-                  {loading ? "確認中..." : "確認する"}
-                </button>
-                <p className="official-card-note" style={{ marginTop: 20, marginBottom: 8 }}>
-                  復元コードをお持ちでない方（はじめての方）はこちら
-                </p>
-                <button type="button" className="official-btn official-btn-ghost" onClick={startNewCode}>
-                  新しく復元コードを発行する
-                </button>
-              </>
-            ) : (
-              <div className="official-account-info">
-                <div>
-                  復元コード：<strong>{formatAccountCodeForDisplay(lookedUpCode)}</strong>
-                </div>
-                <div>
-                  現在のプラン：
-                  <strong>{info?.plan === "premium" ? "PREMIUM" : info?.plan === "standard" ? "STANDARD" : "FREE"}</strong>
-                </div>
-                {info?.firstSeenAt && <div>登録日：{formatDate(info.firstSeenAt)}</div>}
-                <a href={`${APP_URL}/history?code=${encodeURIComponent(lookedUpCode)}`} className="official-btn official-btn-ghost">
-                  アプリのマイページを開く
-                </a>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="official-section">
           <SectionHeading eyebrow="FAQ" title="よくある質問" />
           <div className="official-faq">
             {[
-              { q: "会員登録は必要ですか？", a: "不要です。ブラウザからそのままお使いいただけます。仕入れ記録を残したい場合のみ、端末間の引き継ぎ用に自動発行される「復元コード」を使います。" },
+              { q: "会員登録は必要ですか？", a: "不要です。ブラウザからそのままお使いいただけます。仕入れ記録を残したい場合のみ、端末間の引き継ぎ用に自動発行される「IDコード」を使います。" },
               { q: "無料で使えますか？", a: "1日10回までのスキャンと、月20件までの仕入れ記録の保存は無料です。回数無制限やより高精度な判定は有料プランでご利用いただけます。" },
               { q: "対応しているブランドは？", a: "国内外の古着市場で流通する主要ブランドに対応しています。データベースは順次拡充しています。" },
             ].map((item) => (

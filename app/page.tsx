@@ -1002,13 +1002,13 @@ export default function HomePage() {
             </div>
             <div className="modal-divider" />
             <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
-              以前に発行された12桁の復元コードをお持ちですか？
+              以前に発行された12桁のIDコードをお持ちですか？
               <br />
               （ホーム画面に追加したアプリと、通常のブラウザとで別々に保存されるため、
               以前の仕入れ記録を引き継ぐにはコードの入力が必要です）
             </div>
             <div className="field">
-              <label className="field-label">復元コード（お持ちの場合）</label>
+              <label className="field-label">IDコード（お持ちの場合）</label>
               <input
                 className="field-input"
                 value={firstLaunchInput}
@@ -1060,10 +1060,10 @@ export default function HomePage() {
             <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
               このホーム画面アプリはまだ連携されていません。
               <br />
-              以前に発行された12桁の復元コードをお持ちの場合は下に入力してください。
+              以前に発行された12桁のIDコードをお持ちの場合は下に入力してください。
             </div>
             <div className="field">
-              <label className="field-label">復元コード（お持ちの場合）</label>
+              <label className="field-label">IDコード（お持ちの場合）</label>
               <input
                 className="field-input"
                 value={firstLaunchInput}
@@ -1084,13 +1084,13 @@ export default function HomePage() {
             </button>
             <div className="modal-divider" style={{ margin: "16px 0" }} />
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "var(--gray)", marginBottom: 8 }}>
-              お持ちでない場合：下のボタンから公式サイトを開いてください（別サイトなので、
-              このアプリからでも正しくSafari/Chromeが開きます）。公式サイトの「マイページ」で
-              復元コードを新しく発行し、表示されるボタンから本体アプリを開いてください。開いた
+              お持ちでない場合：下の「設定ID発行」ボタンからマイページを開いてください
+              （別サイトなので、このアプリからでも正しくSafari/Chromeが開きます）。新しい
+              IDコードを発行し、表示されるボタンから本体アプリを開いてください。開いた
               アプリの「マイページ」→「ホーム画面に追加して連携」で、この端末と連携できます。
             </div>
             <a
-              href="https://gemlens-official.vercel.app/"
+              href="https://gemlens-official.vercel.app/mypage"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -1107,7 +1107,7 @@ export default function HomePage() {
                 boxSizing: "border-box",
               }}
             >
-              公式サイトを開く
+              設定ID発行
             </a>
           </div>
         </div>
