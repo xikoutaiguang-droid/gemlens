@@ -713,60 +713,35 @@ input.field-input[type="date"] {
 .official-footer a { font-size: 11px; color: var(--official-muted); text-decoration: underline; }
 
 .official-hero { overflow-x: hidden; }
-.official-phone-row {
-  display: flex; gap: 10px; justify-content: center; align-items: flex-start;
-  margin-top: 8px; flex-wrap: nowrap;
-}
-.official-sample-caption {
-  text-align: center; font-size: 10.5px; color: var(--official-muted); margin-top: 10px; letter-spacing: 0.3px;
-}
 
-.official-phone {
-  width: 148px; flex-shrink: 0; border: 3px solid var(--black); border-radius: 14px;
-  overflow: hidden; box-shadow: 0 16px 32px rgba(0,0,0,0.14); background: white;
+.official-highlights {
+  display: flex; flex-direction: column; gap: 14px;
+  margin: 24px 0 28px;
+  padding: 18px 16px;
+  background: white; border: 2px solid var(--black);
 }
-.official-phone-header {
-  background: var(--black); color: white; display: flex; align-items: center; gap: 5px;
-  padding: 8px 10px;
+.official-highlight { display: flex; align-items: flex-start; gap: 12px; }
+.official-highlight-icon {
+  flex-shrink: 0; stroke: var(--red); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; margin-top: 1px;
 }
-.official-phone-header .logo-text { font-size: 11px; }
-.official-phone-body {
-  padding: 22px 10px; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; min-height: 150px;
-}
-.official-phone-body #idle-msg { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.official-phone-body .idle-arrow { width: 16px; height: 22px; }
-.official-phone-body .idle-text { font-size: 8px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gray); font-weight: 700; text-align: center; }
+.official-highlight-t { font-size: 13.5px; font-weight: 700; color: var(--official-ink); margin-bottom: 2px; }
+.official-highlight-d { font-size: 12px; color: var(--official-muted); line-height: 1.6; }
 
-/* 判定結果サンプルは待機画面より情報量が多いため、上詰め＋縮小表示にする */
-.official-phone-body:has(.official-result-sample) { justify-content: flex-start; padding: 12px 9px; }
-.official-result-sample { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.official-result-sample .single-header { padding-bottom: 0; }
-.official-result-sample #disp-brand { font-size: 16px; line-height: 1.1; }
-.official-result-sample #disp-kana { font-size: 9px; }
-.official-result-sample .market-section { gap: 8px; padding: 8px 0; }
-.official-result-sample .market-header { font-size: 9px; padding: 3px 6px; }
-.official-result-sample .market-block-label { font-size: 7.5px; }
-.official-result-sample .market-list-item { font-size: 9px; gap: 4px; }
-.official-result-sample .bullet-mark { width: 4px; height: 4px; }
-.official-result-sample .price-item { padding: 6px 0; gap: 4px; }
-.official-result-sample .price-item-name { font-size: 9px; }
-.official-result-sample .price-tier-label { font-size: 7px; }
-.official-result-sample .price-tier-value { font-size: 9.5px; }
-.official-result-sample .section-divider { margin: 4px 0; }
-.official-result-sample .info-label { font-size: 7.5px; }
-.official-result-sample .info-value { font-size: 9px; line-height: 1.5; }
-
-.official-phone-footer {
-  background: var(--black); color: white; text-align: center; padding: 10px;
-  font-size: 11px; font-weight: 700;
+/* アプリ本体（app/page.tsx）のヘッダー〜操作パネルまでを、縮小せず実寸のクラスで
+   そのまま再現するスクリーンプレビュー。実物と食い違うスクリーンショットにならないよう
+   静止画は使わず、共通のCSSクラスで再現する。2画面は横に並べず縦に積んで実寸を保つ。 */
+.official-screen-row {
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+  margin: 8px 0 0;
+  width: 100vw; position: relative; left: 50%; margin-left: -50vw;
+  padding: 0 4px; box-sizing: border-box;
 }
-
-/* 待機画面プレビューの撮影ボタンは実物の.btn-panelをそのまま流用し、
-   スマホプレビューの縮小サイズに合わせて寸法だけ縮小する */
-.official-phone-buttons { padding: 8px; }
-.official-phone-buttons .btn-panel { gap: 5px; }
-.official-phone-buttons .btn {
-  padding: 7px 3px; font-size: 7.5px; letter-spacing: 0.2px; gap: 3px; border-width: 1.5px; white-space: nowrap;
+.official-screen {
+  display: flex; flex-direction: column;
+  width: 100%; max-width: 420px; height: 700px; flex-shrink: 0;
+  border: 2px solid var(--black); border-radius: 10px;
+  overflow: hidden; background: #f2f2f2;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.14);
 }
-.official-phone-buttons .btn-icon { width: 10px; height: 10px; stroke-width: 2; }
+.official-screen header { padding-top: 10px; padding-left: 14px; padding-right: 14px; }

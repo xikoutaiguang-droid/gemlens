@@ -29,129 +29,144 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   );
 }
 
-function PhoneChrome({ children, footer }: { children: React.ReactNode; footer: React.ReactNode }) {
+// アプリ本体（app/page.tsx）のヘッダーと完全に同じマークアップ・クラスを再利用する。
+// バッジの数値はサンプル表示用の固定値で、実際の利用状況とは連動しない。
+function ScreenHeader({ usageBadge }: { usageBadge: string }) {
   return (
-    <div className="official-phone">
-      <div className="official-phone-header">
-        <svg className="brand-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg" width="20" height="24">
-          <path d="M60,60 L130,110 L200,40 L270,110 L340,60 L400,190 L200,460 L0,190 Z" fill="white" stroke="black" strokeWidth="14" strokeLinejoin="round" />
-          <circle cx="200" cy="230" r="95" fill="black" />
-          <circle cx="200" cy="230" r="76" fill="white" />
-          <g fill="black">
-            <path d="M200,230 L200,160 A70,70 0 0,1 260,195 Z" />
-            <path d="M200,230 L260,195 A70,70 0 0,1 260,265 Z" />
-            <path d="M200,230 L260,265 A70,70 0 0,1 200,300 Z" />
-            <path d="M200,230 L200,300 A70,70 0 0,1 140,265 Z" />
-            <path d="M200,230 L140,265 A70,70 0 0,1 140,195 Z" />
-            <path d="M200,230 L140,195 A70,70 0 0,1 200,160 Z" />
-          </g>
-          <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
-        </svg>
-        <span className="logo-text">GemLens</span>
+    <header>
+      <svg className="brand-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60,60 L130,110 L200,40 L270,110 L340,60 L400,190 L200,460 L0,190 Z" fill="white" stroke="black" strokeWidth="14" strokeLinejoin="round" />
+        <circle cx="200" cy="230" r="95" fill="black" />
+        <circle cx="200" cy="230" r="76" fill="white" />
+        <g fill="black">
+          <path d="M200,230 L200,160 A70,70 0 0,1 260,195 Z" />
+          <path d="M200,230 L260,195 A70,70 0 0,1 260,265 Z" />
+          <path d="M200,230 L260,265 A70,70 0 0,1 200,300 Z" />
+          <path d="M200,230 L200,300 A70,70 0 0,1 140,265 Z" />
+          <path d="M200,230 L140,265 A70,70 0 0,1 140,195 Z" />
+          <path d="M200,230 L140,195 A70,70 0 0,1 200,160 Z" />
+        </g>
+        <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
+      </svg>
+      <span className="logo-text">GemLens</span>
+      <div className="header-right">
+        <span className="history-link">マイページ</span>
+        <span className="usage-badge">連携済み</span>
+        <span className="usage-badge">{usageBadge}</span>
       </div>
-      <div className="official-phone-body">{children}</div>
-      {footer}
+    </header>
+  );
+}
+
+// 実際のアプリ本体（app/page.tsx）の待機画面と完全に同じクラス（globals.css）・
+// 実寸のフォントサイズで再現したスクリーンプレビュー。縮小や独自の簡易チャットは行わず、
+// アプリ本体と食い違うスクリーンショットにならないようにする。
+function AppPreview() {
+  return (
+    <div className="official-screen">
+      <ScreenHeader usageBadge="残り 4/10" />
+      <div className="container">
+        <div className="result-panel">
+          <div id="idle-msg">
+            <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
+              <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
+              <polyline points="4,18 12,26 20,18" stroke="var(--red)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="idle-text">Scan a tag to identify the brand</div>
+            <div className="idle-note">
+              Vercelでホストされた通常のWebアプリです。安心してご利用ください。
+              <br />
+              文字のない記号・ロゴのみのタグは、複数枚撮影すると判定精度が上がります。
+            </div>
+            <a href={`${APP_URL}/legal`} className="idle-legal-link">
+              利用規約・プライバシーポリシー
+            </a>
+          </div>
+        </div>
+        <div className="btn-panel">
+          <div className="btn btn-camera">
+            <svg className="btn-icon" viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            <span>撮影する</span>
+          </div>
+          <div className="btn btn-gallery">
+            <svg className="btn-icon" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span>写真を選ぶ</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// 実際のアプリ本体（app/page.tsx）の待機画面・撮影ボタンと同じクラス（globals.css）を
-// 再利用したスクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
-// 静止画ではなくアプリ本体と共通のCSSクラスでそのまま再現する。
-function AppPreview() {
-  return (
-    <PhoneChrome
-      footer={
-        <div className="official-phone-buttons">
-          <div className="btn-panel">
-            <button type="button" className="btn btn-camera">
-              <svg className="btn-icon" viewBox="0 0 24 24">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-              <span>撮影する</span>
-            </button>
-            <button type="button" className="btn btn-gallery">
-              <svg className="btn-icon" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <span>写真を選ぶ</span>
-            </button>
-          </div>
-        </div>
-      }
-    >
-      <div id="idle-msg">
-        <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
-          <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
-          <polyline points="4,18 12,26 20,18" stroke="var(--red)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <div className="idle-text">Scan a tag to identify the brand</div>
-      </div>
-    </PhoneChrome>
-  );
-}
-
-// 判定結果画面（app/page.tsx の #result-single）と同じクラスをそのまま再利用した
-// サンプルプレビュー。表示しているブランド・相場は実データではなくサンプルのため、
-// 誤解のないよう見出しで明示する。
+// 判定結果画面（app/page.tsx の #result-single）と完全に同じクラス・実寸で再現した
+// サンプルプレビュー。表示しているブランド・相場はサンプルだが、構造やサイズはアプリ本体そのまま。
 function ResultPreview() {
   return (
-    <PhoneChrome footer={<div className="official-phone-footer">サンプル表示</div>}>
-      <div id="result-single" className="official-result-sample">
-        <div className="single-header">
-          <div className="single-names">
-            <div id="disp-brand">STUSSY</div>
-            <div id="disp-kana">ステューシー</div>
-          </div>
-        </div>
-        <div className="market-section">
-          <div className="market-header">AI 相場情報</div>
-          <div className="market-block">
-            <div className="market-block-label">人気アイテム・定番モデル</div>
-            <div className="market-list">
-              <div className="market-list-item">
-                <span className="bullet-mark" />
-                <span>8ボールロゴTシャツ</span>
-              </div>
-              <div className="market-list-item">
-                <span className="bullet-mark" />
-                <span>ワークシャツ</span>
+    <div className="official-screen">
+      <ScreenHeader usageBadge="残り 3/10" />
+      <div className="container">
+        <div className="result-panel">
+          <div id="result-single">
+            <div className="single-header">
+              <div className="single-names">
+                <div id="disp-brand">STUSSY</div>
+                <div id="disp-kana">ステューシー</div>
               </div>
             </div>
-          </div>
-          <div className="market-block">
-            <div className="market-block-label">中古相場（直近）</div>
-            <div className="price-item">
-              <div className="price-item-name">Tシャツ</div>
-              <div className="price-tiers">
-                <div className="price-tier">
-                  <span className="price-tier-label">安め</span>
-                  <span className="price-tier-value">2,000円</span>
+            <div className="market-section">
+              <div className="market-header">AI 相場情報</div>
+              <div className="market-block">
+                <div className="market-block-label">人気アイテム・定番モデル</div>
+                <div className="market-list">
+                  <div className="market-list-item">
+                    <span className="bullet-mark" />
+                    <span>8ボールロゴTシャツ</span>
+                  </div>
+                  <div className="market-list-item">
+                    <span className="bullet-mark" />
+                    <span>ワークシャツ</span>
+                  </div>
                 </div>
-                <div className="price-tier price-tier-avg">
-                  <span className="price-tier-label">平均</span>
-                  <span className="price-tier-value">4,500円</span>
-                </div>
-                <div className="price-tier">
-                  <span className="price-tier-label">高値</span>
-                  <span className="price-tier-value">8,000円</span>
+              </div>
+              <div className="market-block">
+                <div className="market-block-label">中古相場（直近）</div>
+                <div className="price-item">
+                  <div className="price-item-name">Tシャツ</div>
+                  <div className="price-tiers">
+                    <div className="price-tier">
+                      <span className="price-tier-label">安め</span>
+                      <span className="price-tier-value">2,000円</span>
+                    </div>
+                    <div className="price-tier price-tier-avg">
+                      <span className="price-tier-label">平均</span>
+                      <span className="price-tier-value">4,500円</span>
+                    </div>
+                    <div className="price-tier">
+                      <span className="price-tier-label">高値</span>
+                      <span className="price-tier-value">8,000円</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="section-divider" />
-        <div className="info-section">
-          <div className="info-label">備考</div>
-          <div className="info-value">
-            1980年カリフォルニア発、サーフ・スケートカルチャーを起源に持つストリートブランドの草分け。象徴的な手書きロゴが特徴。
+            <div className="section-divider" />
+            <div className="info-section">
+              <div className="info-label">備考</div>
+              <div className="info-value">
+                1980年カリフォルニア発、サーフ・スケートカルチャーを起源に持つストリートブランドの草分け。象徴的な手書きロゴが特徴。
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </PhoneChrome>
+    </div>
   );
 }
 
@@ -238,11 +253,48 @@ export default function OfficialSitePage() {
             ブラウザからすぐにお使いいただけます。
           </p>
 
-          <div className="official-phone-row">
+          <div className="official-highlights">
+            <div className="official-highlight">
+              <svg className="official-highlight-icon" viewBox="0 0 24 24" width="22" height="22">
+                <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                <line x1="19" y1="9" x2="23" y2="15" />
+                <line x1="23" y1="9" x2="19" y2="15" />
+              </svg>
+              <div>
+                <div className="official-highlight-t">無音で撮影できる</div>
+                <div className="official-highlight-d">シャッター音が鳴らない独自カメラだから、周囲を気にせず撮影できます。</div>
+              </div>
+            </div>
+            <div className="official-highlight">
+              <svg className="official-highlight-icon" viewBox="0 0 24 24" width="22" height="22">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+              <div>
+                <div className="official-highlight-t">膨大なブランドタグに対応</div>
+                <div className="official-highlight-d">国内外の古着市場で流通する数多くのブランドに対応。データベースは順次拡充中です。</div>
+              </div>
+            </div>
+            <div className="official-highlight">
+              <svg className="official-highlight-icon" viewBox="0 0 24 24" width="22" height="22">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="22" y1="12" x2="18" y2="12" />
+                <line x1="6" y1="12" x2="2" y2="12" />
+                <line x1="12" y1="6" x2="12" y2="2" />
+                <line x1="12" y1="22" x2="12" y2="18" />
+              </svg>
+              <div>
+                <div className="official-highlight-t">記号だけのタグも判定</div>
+                <div className="official-highlight-d">文字が読めないロゴ・記号のみのタグも、複数枚撮影すればAIが判定します。</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="official-screen-row">
             <AppPreview />
             <ResultPreview />
           </div>
-          <div className="official-sample-caption">左：待機画面／右：判定結果画面（サンプル表示）</div>
 
           <a href={APP_URL} className="official-cta">
             アプリを開く
