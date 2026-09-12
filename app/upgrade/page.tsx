@@ -149,12 +149,17 @@ export default function UpgradePage() {
           </div>
         )}
 
-        {PLANS.map((plan) => (
+        {PLANS.map((plan) => {
+          const isPremium = plan.id === "premium";
+          return (
           <div
             key={plan.id}
             style={{
-              border: plan.id === "premium" ? "2px solid var(--red)" : "2px solid var(--black)",
-              padding: 20,
+              border: isPremium ? "1px solid var(--red)" : "2px solid var(--black)",
+              borderTop: isPremium ? "4px solid var(--red)" : undefined,
+              background: isPremium ? "var(--black)" : "white",
+              color: isPremium ? "white" : "inherit",
+              padding: 24,
               marginBottom: 20,
               opacity: currentPlan === plan.id ? 0.6 : 1,
             }}
@@ -164,14 +169,23 @@ export default function UpgradePage() {
                 fontSize: 16,
                 fontWeight: 700,
                 marginBottom: 4,
-                color: plan.id === "premium" ? "var(--red)" : "inherit",
+                letterSpacing: isPremium ? "2px" : undefined,
+                color: isPremium ? "var(--red)" : "inherit",
               }}
             >
               {plan.name}
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{plan.price}</div>
             {plan.trial && <div style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 10 }}>{plan.trial}</div>}
-            <ul style={{ paddingLeft: 18, marginBottom: 16, fontSize: 13, lineHeight: 1.8 }}>
+            <ul
+              style={{
+                paddingLeft: 18,
+                marginBottom: 16,
+                fontSize: 13,
+                lineHeight: 1.8,
+                color: isPremium ? "#ddd" : "inherit",
+              }}
+            >
               {plan.features.map((f) => (
                 <li key={f}>{f}</li>
               ))}
@@ -182,7 +196,7 @@ export default function UpgradePage() {
               style={{
                 width: "100%",
                 padding: "12px",
-                background: currentPlan === plan.id ? "#ccc" : "var(--black)",
+                background: currentPlan === plan.id ? "#ccc" : isPremium ? "var(--red)" : "var(--black)",
                 color: "white",
                 fontWeight: 700,
                 fontSize: 14,
@@ -193,7 +207,8 @@ export default function UpgradePage() {
               {currentPlan === plan.id ? "現在のプラン" : submittingPlan === plan.id ? "読み込み中..." : "申し込む"}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
