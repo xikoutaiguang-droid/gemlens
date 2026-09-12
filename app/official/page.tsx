@@ -183,6 +183,20 @@ export default function OfficialSitePage() {
   return (
     <div className="official-page">
       <header className="official-header">
+        <svg className="brand-mark" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg" width="22" height="26">
+          <path d="M60,60 L130,110 L200,40 L270,110 L340,60 L400,190 L200,460 L0,190 Z" fill="white" stroke="black" strokeWidth="14" strokeLinejoin="round" />
+          <circle cx="200" cy="230" r="95" fill="black" />
+          <circle cx="200" cy="230" r="76" fill="white" />
+          <g fill="black">
+            <path d="M200,230 L200,160 A70,70 0 0,1 260,195 Z" />
+            <path d="M200,230 L260,195 A70,70 0 0,1 260,265 Z" />
+            <path d="M200,230 L260,265 A70,70 0 0,1 200,300 Z" />
+            <path d="M200,230 L200,300 A70,70 0 0,1 140,265 Z" />
+            <path d="M200,230 L140,265 A70,70 0 0,1 140,195 Z" />
+            <path d="M200,230 L140,195 A70,70 0 0,1 200,160 Z" />
+          </g>
+          <circle cx="200" cy="230" r="76" fill="none" stroke="black" strokeWidth="10" />
+        </svg>
         <div className="logo-text" style={{ fontSize: 20 }}>
           GemLens
         </div>
