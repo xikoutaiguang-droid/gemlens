@@ -29,10 +29,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   );
 }
 
-// 実際のアプリ本体（app/page.tsx）の待機画面と同じクラス（globals.css）を再利用した
-// スクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
-// 静止画ではなくアプリ本体と共通のCSSクラスでそのまま再現する。
-function AppPreview() {
+function PhoneChrome({ children, footer }: { children: React.ReactNode; footer: string }) {
   return (
     <div className="official-phone">
       <div className="official-phone-header">
@@ -52,17 +49,87 @@ function AppPreview() {
         </svg>
         <span className="logo-text">GemLens</span>
       </div>
-      <div className="official-phone-body">
-        <div id="idle-msg">
-          <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
-            <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
-            <polyline points="4,18 12,26 20,18" stroke="var(--red)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div className="idle-text">Scan a tag to identify the brand</div>
+      <div className="official-phone-body">{children}</div>
+      <div className="official-phone-footer">{footer}</div>
+    </div>
+  );
+}
+
+// 実際のアプリ本体（app/page.tsx）の待機画面と同じクラス（globals.css）を再利用した
+// スクリーンプレビュー。実物と食い違うスクリーンショットにならないよう、
+// 静止画ではなくアプリ本体と共通のCSSクラスでそのまま再現する。
+function AppPreview() {
+  return (
+    <PhoneChrome footer="撮影する">
+      <div id="idle-msg">
+        <svg className="idle-arrow" viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">
+          <line x1="12" y1="0" x2="12" y2="22" stroke="var(--red)" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
+          <polyline points="4,18 12,26 20,18" stroke="var(--red)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div className="idle-text">Scan a tag to identify the brand</div>
+      </div>
+    </PhoneChrome>
+  );
+}
+
+// 判定結果画面（app/page.tsx の #result-single）と同じクラスをそのまま再利用した
+// サンプルプレビュー。表示しているブランド・相場は実データではなくサンプルのため、
+// 誤解のないよう見出しで明示する。
+function ResultPreview() {
+  return (
+    <PhoneChrome footer="サンプル表示">
+      <div id="result-single" className="official-result-sample">
+        <div className="single-header">
+          <div className="single-names">
+            <div id="disp-brand">STUSSY</div>
+            <div id="disp-kana">ステューシー</div>
+          </div>
+        </div>
+        <div className="market-section">
+          <div className="market-header">AI 相場情報</div>
+          <div className="market-block">
+            <div className="market-block-label">人気アイテム・定番モデル</div>
+            <div className="market-list">
+              <div className="market-list-item">
+                <span className="bullet-mark" />
+                <span>8ボールロゴTシャツ</span>
+              </div>
+              <div className="market-list-item">
+                <span className="bullet-mark" />
+                <span>ワークシャツ</span>
+              </div>
+            </div>
+          </div>
+          <div className="market-block">
+            <div className="market-block-label">中古相場（直近）</div>
+            <div className="price-item">
+              <div className="price-item-name">Tシャツ</div>
+              <div className="price-tiers">
+                <div className="price-tier">
+                  <span className="price-tier-label">安め</span>
+                  <span className="price-tier-value">2,000円</span>
+                </div>
+                <div className="price-tier price-tier-avg">
+                  <span className="price-tier-label">平均</span>
+                  <span className="price-tier-value">4,500円</span>
+                </div>
+                <div className="price-tier">
+                  <span className="price-tier-label">高値</span>
+                  <span className="price-tier-value">8,000円</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="section-divider" />
+        <div className="info-section">
+          <div className="info-label">備考</div>
+          <div className="info-value">
+            1980年カリフォルニア発、サーフ・スケートカルチャーを起源に持つストリートブランドの草分け。象徴的な手書きロゴが特徴。
+          </div>
         </div>
       </div>
-      <div className="official-phone-footer">撮影する</div>
-    </div>
+    </PhoneChrome>
   );
 }
 
@@ -135,7 +202,11 @@ export default function OfficialSitePage() {
             ブラウザからすぐにお使いいただけます。
           </p>
 
-          <AppPreview />
+          <div className="official-phone-row">
+            <AppPreview />
+            <ResultPreview />
+          </div>
+          <div className="official-sample-caption">左：待機画面／右：判定結果画面（サンプル表示）</div>
 
           <a href={APP_URL} className="official-cta">
             アプリを開く
