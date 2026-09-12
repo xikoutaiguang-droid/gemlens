@@ -728,10 +728,9 @@ input.field-input[type="date"] {
 .official-highlight-t { font-size: 13.5px; font-weight: 700; color: var(--official-ink); margin-bottom: 2px; }
 .official-highlight-d { font-size: 12px; color: var(--official-muted); line-height: 1.6; }
 
-/* 実機の操作画面をそのまま撮ったGIF（上部ステータスバーのみ除去）をメイン画像として表示する。 */
+/* 実機の操作画面をスマホ枠・手順キャプション付きでGIF化したメイン画像。
+   枠や見出しはGIF側に描き込み済みのため、ここでは余白の調整のみ行う。 */
 .official-demo {
-  display: block; width: 100%; max-width: 320px; margin: 24px auto 0;
-  border: 2px solid var(--black); border-radius: 10px; overflow: hidden;
-  box-shadow: 0 14px 28px rgba(0,0,0,0.14);
+  display: block; width: 100%; max-width: 340px; margin: 8px auto 0;
 }
 .official-demo img { display: block; width: 100%; height: auto; }

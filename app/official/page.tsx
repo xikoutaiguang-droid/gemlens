@@ -167,8 +167,8 @@ export default function OfficialSitePage() {
             <img
               src="/official/demo.gif"
               alt="GEMLENSでタグを撮影し、AIがブランドと相場情報を判定するまでの操作画面"
-              width={560}
-              height={1142}
+              width={680}
+              height={1352}
             />
           </div>
 
