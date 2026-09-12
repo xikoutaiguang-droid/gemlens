@@ -26,6 +26,7 @@ export const maxDuration = 60;
 interface GeminiVisionResult extends LogoGuessResult {
   perceivedText?: string;
   matchSource?: string;
+  familyCheckDebug?: string;
 }
 
 // 「タグの文字を読む」と「リストと照合する」を完全に分離する。
@@ -64,6 +65,7 @@ async function callGeminiVision(
           matched.brandName,
           children.map((c) => c.brandName)
         );
+        const familyCheckDebug = `候補=[${children.map((c) => c.brandName).join(", ")}] 応答=${variant ?? "(親ブランドのまま/null)"}`;
         if (variant) {
           // Geminiには候補一覧の表記通り返すよう指示しているが、実際には
           // タグに書かれている通りの表記（例：「BEAMS+」）でそのまま返してくることがある。
@@ -76,9 +78,15 @@ async function callGeminiVision(
             return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
           });
           if (variantEntry) {
-            return { brandName: variantEntry.brandName, perceivedText: perceived, matchSource: "family-variant-check" };
+            return {
+              brandName: variantEntry.brandName,
+              perceivedText: perceived,
+              matchSource: "family-variant-check",
+              familyCheckDebug,
+            };
           }
         }
+        return { brandName: matched.brandName, perceivedText: perceived, matchSource: "gemini-text", familyCheckDebug };
       }
       return { brandName: matched.brandName, perceivedText: perceived, matchSource: "gemini-text" };
     }
@@ -242,6 +250,9 @@ export async function POST(req: NextRequest) {
     }
     if (geminiResult.visualDescription) {
       debugLines.push("[VISUAL] " + geminiResult.visualDescription);
+    }
+    if (geminiResult.familyCheckDebug) {
+      debugLines.push("[FAMILY] " + geminiResult.familyCheckDebug);
     }
 
     // フォールバック: 画像判定が「不明」の場合のみ、キーワードとの辞書照合を試みる
