@@ -613,3 +613,23 @@ input.field-input[type="date"] {
 .ad-slot-label {
   font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray);
 }
+
+.official-page { font-family: -apple-system,'Helvetica Neue',sans-serif; background: #f2f2f2; min-height: 100vh; }
+.official-phone {
+  width: 220px; margin: 0 auto; border: 3px solid var(--black); border-radius: 18px;
+  overflow: hidden; box-shadow: 0 12px 24px rgba(0,0,0,0.12); background: white;
+}
+.official-phone-header {
+  background: var(--black); color: white; display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+}
+.official-phone-body {
+  padding: 30px 14px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 160px;
+}
+.official-phone-body #idle-msg { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.official-phone-body .idle-text { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--gray); font-weight: 700; text-align: center; }
+.official-phone-footer {
+  background: var(--black); color: white; text-align: center; padding: 10px;
+  font-size: 11px; font-weight: 700;
+}
