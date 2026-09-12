@@ -74,6 +74,8 @@ export default function HistoryPage() {
   const [restoreInput, setRestoreInput] = useState("");
   const [restoreError, setRestoreError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true);
+  const [showLinkInstructions, setShowLinkInstructions] = useState(false);
 
   const [staleThreshold, setStaleThreshold] = useState(60);
   const [staleThresholdInput, setStaleThresholdInput] = useState("60");
@@ -101,6 +103,12 @@ export default function HistoryPage() {
     const threshold = getStaleThresholdDays();
     setStaleThreshold(threshold);
     setStaleThresholdInput(String(threshold));
+
+    // 既にホーム画面から起動している場合は「追加して連携」ボタンの意味が無いため隠す
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
 
     fetch(`/api/usage?accountCode=${encodeURIComponent(code)}`)
       .then((res) => res.json())
@@ -203,6 +211,20 @@ export default function HistoryPage() {
     } catch {
       // クリップボード権限が無い環境では何もしない
     }
+  }
+
+  // 「ホーム画面に追加」時にiOSが読みに行くマニフェストのURLに、このコードを
+  // クエリparamとして埋め込む。iOSはブラウザとホーム画面アプリでlocalStorageの
+  // 保存領域が分離されているため、通常はコードを手動で控えて再入力する必要が
+  // あったが、この仕組みによりホーム画面アプリ起動時に自動で復元コードが
+  // 引き継がれるようになる。
+  function startLinkedInstall() {
+    if (!accountCode) return;
+    const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.href = `/manifest.json?code=${encodeURIComponent(accountCode)}`;
+    }
+    setShowLinkInstructions(true);
   }
 
   async function submitRestore() {
@@ -574,10 +596,47 @@ export default function HistoryPage() {
             <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 6, lineHeight: 1.6 }}>
               このコードを紛失すると記録に二度とアクセスできなくなります。メモ帳等に控えておくか、
               上部の「CSVエクスポート」で定期的にバックアップを取ることをおすすめします。
-              <br />
-              ※iOSでは「ホーム画面に追加」したアプリと通常のブラウザとでコードの保存場所が
-              別になることがあります。ホーム画面に追加する前に、必ずこのコードを控えておいてください。
             </div>
+
+            {!isStandalone && (
+              <div style={{ marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={startLinkedInstall}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    background: "var(--black)",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  ホーム画面に追加して連携
+                </button>
+                {showLinkInstructions && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1.7,
+                      marginTop: 8,
+                      padding: 10,
+                      background: "#fafafa",
+                      border: "2px solid var(--black)",
+                    }}
+                  >
+                    このまま共有ボタン（
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: "-2px" }}>
+                      <path d="M12 16V4M12 4L7 9M12 4l5 5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 14v4a2 2 0 002 2h10a2 2 0 002-2v-4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    ）をタップし、「ホーム画面に追加」を選んでください。この記録がホーム画面のアプリに自動的に引き継がれます。
+                  </div>
+                )}
+              </div>
+            )}
             <div className="field" style={{ marginTop: 12 }}>
               <label className="field-label">別の端末のコードを復元</label>
               <input

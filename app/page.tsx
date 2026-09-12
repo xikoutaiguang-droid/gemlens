@@ -353,6 +353,23 @@ export default function HomePage() {
 
     const splashTimer = setTimeout(() => setShowSplash(false), 2600);
 
+    // 「ホーム画面に追加して連携」ボタンから追加された場合、マニフェストの
+    // start_urlにコードが埋め込まれてこのURLに付与されている。これが
+    // あれば最優先でこの端末のコードとして保存し、そのまま引き継ぐ。
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get("code");
+    if (codeFromUrl) {
+      const normalized = normalizeAccountCode(codeFromUrl);
+      if (isValidAccountCode(normalized)) {
+        persistAccountCode(normalized);
+        urlParams.delete("code");
+        const cleanUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
+        window.history.replaceState({}, "", cleanUrl);
+        fetchUsage(normalized);
+        return () => clearTimeout(splashTimer);
+      }
+    }
+
     // iOSでは「ホーム画面に追加」したアプリと通常のSafari/Chromeタブとで
     // localStorageの保存領域が分離されることがあり、この端末では復元コードが
     // 見つからない＝新規ユーザーとは限らない（別の保存領域に既存のコードがある
