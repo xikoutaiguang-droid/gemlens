@@ -28,6 +28,13 @@ interface HistoryRecord {
 
 type StatusFilter = "all" | "instock" | "sold";
 
+// app/api/history/route.tsのMONTHLY_SAVE_LIMITSと一致させる（表示専用の複製）
+const MONTHLY_SAVE_LIMITS: Record<"free" | "standard" | "premium", number> = {
+  free: 20,
+  standard: 50,
+  premium: Infinity,
+};
+
 function yen(n: number): string {
   return "¥" + n.toLocaleString();
 }
@@ -438,7 +445,15 @@ export default function HistoryPage() {
                   <div className="history-summary history-summary-secondary">
                     <div className="history-summary-item">
                       <div className="history-summary-label">仕入れ件数</div>
-                      <div className="history-summary-value">{purchasedCountInMonth(selectedMonth)}件</div>
+                      <div className="history-summary-value">
+                        {purchasedCountInMonth(selectedMonth)}件
+                        {selectedMonth === currentMonthPrefix && MONTHLY_SAVE_LIMITS[plan] !== Infinity && (
+                          <span style={{ fontSize: 12, color: "var(--gray)", fontWeight: 400 }}>
+                            {" "}
+                            / {MONTHLY_SAVE_LIMITS[plan]}件
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="history-summary-item">
                       <div className="history-summary-label">利益</div>
