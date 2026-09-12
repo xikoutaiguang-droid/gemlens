@@ -119,6 +119,7 @@ header .logo-text {
   display: flex;
   flex-direction: column;
   padding: 14px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   gap: 12px;
   overflow: hidden;
   min-height: 0;
