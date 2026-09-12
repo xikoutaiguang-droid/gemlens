@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "GEMLENS",
   },
+  // appleWebApp.capableだけではapple-mobile-web-app-capableタグが
+  // 出力されないケースがあったため、確実に出力されるよう明示的に指定する。
+  // これが無いとホーム画面に追加してもスタンドアロン起動されず、
+  // 通常のSafariタブ（URLバー・下部ツールバー付き）として開いてしまう。
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
