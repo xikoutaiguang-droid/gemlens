@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.74.0",
     "@upstash/redis": "^1.38.4",
     "@upstash/vector": "^1.2.3",
     "googleapis": "^178.1.1",
