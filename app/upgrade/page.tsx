@@ -30,6 +30,13 @@ export default function UpgradePage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
+    document.body.style.overflow = "auto";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success")) setNotice("お申し込みありがとうございます。反映まで数秒かかる場合があります。");
     if (params.get("canceled")) setNotice("お手続きをキャンセルしました。");
@@ -114,7 +121,9 @@ export default function UpgradePage() {
           <span className="logo-text">GemLens</span>
         </Link>
         <div className="header-right">
-          <span className="usage-badge">プラン</span>
+          <Link href="/history" className="history-link">
+            マイページに戻る
+          </Link>
         </div>
       </header>
 

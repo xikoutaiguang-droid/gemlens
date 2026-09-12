@@ -1,8 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 
 export default function LegalPage() {
+  // body側は#app-root画面（撮影・履歴）用にoverflow:hiddenが既定のため、
+  // このページ滞在中だけ通常のページスクロールに戻す。
+  useEffect(() => {
+    document.body.style.overflow = "auto";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   return (
     <div className="legal-root">
       <header>

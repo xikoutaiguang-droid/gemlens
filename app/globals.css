@@ -427,6 +427,19 @@ input[type="file"] { display: none; }
 }
 .btn-add-history-inline:active { opacity: 0.7; }
 
+.mypage-overview {
+  background: #fafafa; border: 2px solid var(--black); padding: 14px 16px; margin-bottom: 20px;
+}
+.mypage-plan-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  font-size: 13px;
+}
+.mypage-overview .history-summary { margin-top: 14px; }
+.mypage-plan-btn {
+  font-size: 11px; font-weight: 700; padding: 6px 12px; border: 2px solid var(--black);
+  background: white; text-decoration: none; color: inherit; white-space: nowrap;
+}
+
 .history-summary {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
   padding-bottom: 14px; border-bottom: 2px solid var(--black); margin-bottom: 14px;
@@ -435,10 +448,15 @@ input[type="file"] { display: none; }
 .history-summary-label { font-size: 9px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
 .history-summary-value { font-size: clamp(13px, 2.4vw, 17px); font-weight: 700; color: var(--black); }
 .history-summary-value.profit { color: var(--red); }
-.history-summary-secondary { grid-template-columns: repeat(2, 1fr); }
+.history-summary-secondary { grid-template-columns: repeat(2, 1fr); padding-bottom: 0; border-bottom: none; margin-bottom: 0; }
+.history-month-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .history-month-label {
   font-size: 10px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase;
-  font-weight: 700; margin-bottom: 8px;
+  font-weight: 700;
+}
+.csv-export-link {
+  font-size: 11px; font-weight: 700; text-decoration: underline; background: none; border: none;
+  color: var(--black); cursor: pointer; padding: 0;
 }
 
 .history-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
@@ -493,13 +511,6 @@ input[type="file"] { display: none; }
   border: 2px solid var(--black); border-radius: 2px;
 }
 
-.csv-export-btn {
-  align-self: flex-end; margin-bottom: 12px; padding: 8px 14px;
-  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-  border: 2px solid var(--black); background: white; color: var(--black);
-  border-radius: 2px; cursor: pointer;
-}
-.csv-export-btn:active { background: var(--black); color: white; }
 
 .field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .field-label { font-size: 10px; color: var(--black); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
@@ -556,9 +567,8 @@ input.field-input[type="date"] {
 }
 
 .legal-root {
-  height: 100vh; height: 100dvh; width: 100%;
+  min-height: 100vh; min-height: 100dvh; width: 100%;
   display: flex; flex-direction: column; background: #f2f2f2;
-  overflow-y: auto;
 }
 .legal-body {
   max-width: 640px; width: 100%; margin: 0 auto;

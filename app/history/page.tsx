@@ -346,25 +346,56 @@ export default function HistoryPage() {
 
       <div className="container">
         <div className="result-panel">
-          <div className="account-code-box" style={{ marginBottom: 20 }}>
-            <span>
-              現在のプラン：
-              <strong>{plan === "premium" ? "PREMIUM" : plan === "standard" ? "STANDARD" : "FREE"}</strong>
-            </span>
-            <Link
-              href="/upgrade"
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: "6px 12px",
-                border: "2px solid var(--black)",
-                background: "white",
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              {plan === "free" ? "プランを見る" : "管理・変更する"}
-            </Link>
+          <div className="mypage-overview">
+            <div className="mypage-plan-row">
+              <span>
+                現在のプラン：
+                <strong>{plan === "premium" ? "PREMIUM" : plan === "standard" ? "STANDARD" : "FREE"}</strong>
+              </span>
+              <Link href="/upgrade" className="mypage-plan-btn">
+                {plan === "free" ? "プランを見る" : "管理・変更する"}
+              </Link>
+            </div>
+
+            {!loading && records.length > 0 && (
+              <>
+                <div className="history-summary">
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">合計</div>
+                    <div className="history-summary-value">{records.length}件</div>
+                  </div>
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">在庫</div>
+                    <div className="history-summary-value">{inStockCount}件</div>
+                  </div>
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">売却済</div>
+                    <div className="history-summary-value">{soldRecords.length}件</div>
+                  </div>
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">合計利益</div>
+                    <div className="history-summary-value profit">{yen(totalProfit)}</div>
+                  </div>
+                </div>
+
+                <div className="history-month-row">
+                  <div className="history-month-label">今月の実績</div>
+                  <button className="csv-export-link" onClick={exportCsv}>
+                    CSVエクスポート
+                  </button>
+                </div>
+                <div className="history-summary history-summary-secondary">
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">仕入れ件数</div>
+                    <div className="history-summary-value">{thisMonthPurchasedCount}件</div>
+                  </div>
+                  <div className="history-summary-item">
+                    <div className="history-summary-label">利益</div>
+                    <div className="history-summary-value profit">{yen(thisMonthProfit)}</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {loading ? (
@@ -377,40 +408,6 @@ export default function HistoryPage() {
             </div>
           ) : (
             <>
-              <button className="csv-export-btn" onClick={exportCsv}>
-                CSVエクスポート
-              </button>
-              <div className="history-summary">
-                <div className="history-summary-item">
-                  <div className="history-summary-label">合計</div>
-                  <div className="history-summary-value">{records.length}件</div>
-                </div>
-                <div className="history-summary-item">
-                  <div className="history-summary-label">在庫</div>
-                  <div className="history-summary-value">{inStockCount}件</div>
-                </div>
-                <div className="history-summary-item">
-                  <div className="history-summary-label">売却済</div>
-                  <div className="history-summary-value">{soldRecords.length}件</div>
-                </div>
-                <div className="history-summary-item">
-                  <div className="history-summary-label">合計利益</div>
-                  <div className="history-summary-value profit">{yen(totalProfit)}</div>
-                </div>
-              </div>
-
-              <div className="history-month-label">今月の実績</div>
-              <div className="history-summary history-summary-secondary">
-                <div className="history-summary-item">
-                  <div className="history-summary-label">仕入れ件数</div>
-                  <div className="history-summary-value">{thisMonthPurchasedCount}件</div>
-                </div>
-                <div className="history-summary-item">
-                  <div className="history-summary-label">利益</div>
-                  <div className="history-summary-value profit">{yen(thisMonthProfit)}</div>
-                </div>
-              </div>
-
               <div className="history-filters">
                 <input
                   className="field-input"
