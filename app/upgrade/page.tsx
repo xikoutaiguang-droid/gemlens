@@ -166,6 +166,9 @@ export default function UpgradePage() {
           >
             <div
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
                 fontSize: 16,
                 fontWeight: 700,
                 marginBottom: 4,
@@ -173,9 +176,14 @@ export default function UpgradePage() {
                 color: isPremium ? "var(--red)" : "inherit",
               }}
             >
+              {isPremium && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M12 2L22 9L12 22L2 9Z" strokeLinejoin="round" />
+                </svg>
+              )}
               {plan.name}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{plan.price}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, color: isPremium ? "white" : "inherit" }}>{plan.price}</div>
             {plan.trial && <div style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 10 }}>{plan.trial}</div>}
             <ul
               style={{
@@ -183,7 +191,7 @@ export default function UpgradePage() {
                 marginBottom: 16,
                 fontSize: 13,
                 lineHeight: 1.8,
-                color: isPremium ? "#ddd" : "inherit",
+                color: isPremium ? "white" : "inherit",
               }}
             >
               {plan.features.map((f) => (
