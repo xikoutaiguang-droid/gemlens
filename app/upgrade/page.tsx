@@ -165,7 +165,7 @@ export default function UpgradePage() {
             key={plan.id}
             style={{
               border: isPremium ? "1px solid var(--red)" : "2px solid var(--black)",
-              borderTop: isPremium ? "4px solid var(--red)" : undefined,
+              borderTop: isPremium ? "4px solid var(--red)" : "2px solid var(--black)",
               background: isPremium ? "var(--black)" : "white",
               color: isPremium ? "white" : "inherit",
               padding: 24,
