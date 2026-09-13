@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { peekUsage, isDeveloperKey, DAILY_FREE_LIMIT } from "@/lib/rateLimit";
+import { peekUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/requestIp";
 import { getProStatus, hasUnlimitedScans } from "@/lib/pro";
 import { getOrSetFirstSeenAt } from "@/lib/accountMeta";
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   if (hasUnlimitedScans(proStatus) || isDeveloper) {
     return NextResponse.json({
-      usage: { allowed: true, count: 0, limit: DAILY_FREE_LIMIT, isDeveloper },
+      usage: { allowed: true, count: 0, limit: DAILY_FREE_LIMIT, adBonus: 0, adBonusLimit: DAILY_AD_BONUS_LIMIT, isDeveloper },
       plan: proStatus.plan,
       firstSeenAt,
     });

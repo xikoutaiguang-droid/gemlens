@@ -348,6 +348,11 @@ header .logo-text {
 .btn-camera  { background: var(--black); color: white; }
 .btn-gallery { background: white; color: var(--black); }
 .btn:disabled { opacity: 0.4; pointer-events: none; }
+.btn-ad-reward {
+  background: white; color: var(--red); border-color: var(--red);
+  width: 100%; padding: 14px 12px; flex-direction: column; gap: 4px;
+}
+.ad-reward-error { font-size: 10px; color: var(--gray); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .btn-icon {
   width: 17px; height: 17px; stroke-width: 1.8; fill: none;
   stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;

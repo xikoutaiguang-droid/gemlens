@@ -11,7 +11,7 @@ import {
 } from "@/lib/gemini";
 import { matchBrandName, matchByKeywords, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
-import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, type UsageResult } from "@/lib/rateLimit";
+import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/requestIp";
 import { embedImage } from "@/lib/embeddings";
 import { queryReferenceImages } from "@/lib/vectorStore";
@@ -306,7 +306,7 @@ export async function POST(req: NextRequest) {
 
     let usage: UsageResult;
     if (unlimited) {
-      usage = { allowed: true, count: 0, limit: DAILY_FREE_LIMIT, isDeveloper };
+      usage = { allowed: true, count: 0, limit: DAILY_FREE_LIMIT, adBonus: 0, adBonusLimit: DAILY_AD_BONUS_LIMIT, isDeveloper };
     } else {
       usage = await checkAndIncrementUsage(getClientIp(req), devKey);
       if (!usage.allowed) {

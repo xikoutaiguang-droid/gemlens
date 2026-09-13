@@ -15,6 +15,7 @@ import {
 import { isValidAccountCode, normalizeAccountCode } from "../lib/accountCode";
 import ItemCategoryPicker from "./components/ItemCategoryPicker";
 import AdSlot from "./components/AdSlot";
+import RewardedAdButton from "./components/RewardedAdButton";
 
 const MAX_IMAGES = 3;
 const SCAN_TIMEOUT_MS = 20000;
@@ -43,6 +44,8 @@ interface UsageInfo {
   allowed: boolean;
   count: number;
   limit: number;
+  adBonus: number;
+  adBonusLimit: number;
   isDeveloper: boolean;
 }
 
@@ -797,9 +800,14 @@ export default function HomePage() {
           )}
 
           {phase === "result-error" && (
-            <div id="result-error" style={{ display: "flex" }}>
-              <div className="error-bar" />
-              <div id="disp-error">{result?.message || errorMessage || "ブランドを特定できませんでした。"}</div>
+            <div id="result-error" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex" }}>
+                <div className="error-bar" />
+                <div id="disp-error">{result?.message || errorMessage || "ブランドを特定できませんでした。"}</div>
+              </div>
+              {result?.limitReached && plan === "free" && (
+                <RewardedAdButton usage={usage} onGranted={setUsage} />
+              )}
             </div>
           )}
 
