@@ -593,6 +593,10 @@ input.field-input[type="date"] {
 
 .legal-root {
   min-height: 100vh; min-height: 100dvh; width: 100%;
+  /* bodyもmin-height:100vhのflexコンテナのため、このルート自身がflexアイテムとして
+     縮められると（デフォルトのflex-shrink:1）、ビューポート超過分の背景が body
+     自身の黒背景のまま透けて見えてしまう。flex-shrink:0で中身に合わせて伸びるようにする。 */
+  flex-shrink: 0;
   display: flex; flex-direction: column; background: #f2f2f2;
 }
 .legal-body {
@@ -636,6 +640,9 @@ input.field-input[type="date"] {
   background: var(--official-bg);
   color: var(--official-ink);
   min-height: 100vh;
+  /* bodyの背景（黒）がページ下部にはみ出さないよう、内容に合わせて伸びるようにする
+     （.legal-rootと同じ理由。詳細はそちらのコメント参照）。 */
+  flex-shrink: 0;
 }
 
 .official-header {
