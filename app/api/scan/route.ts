@@ -148,11 +148,20 @@ async function guessBrandFromLogoWithFallback(
     }
     // Vision APIは「Lululemon Athletica」のように正式・法人名寄りの表記で返すことがあり、
     // DB側の登録表記（例：「lululemon」）と完全一致しない場合がある。
-    // 部分一致（どちらかがどちらかを包含）でも十分に確度が高いため、これも許容する。
-    const normLogo = normLoose(logoName);
+    // ただし単純な文字列の部分一致（includes）は誤爆の危険がある
+    // （例：実在の別ブランド「Vans」のロゴ検出が、DBの短い別ブランド名「VAN」に
+    // 　"vans".includes("van")で誤って一致してしまう）。
+    // そのため、スペース区切りの「単語」として完全一致する場合のみ許容する
+    // （「Lululemon Athletica」→["lululemon","athletica"]の中に、DBの「lululemon」が
+    // 　単語としてそのまま含まれていればOK。「Vans」は単語として"van"と一致しないためNG）。
+    const logoWords = logoName.toLowerCase().split(/\s+/).filter(Boolean);
     const fuzzyMatch = brandEntries.find((e) => {
-      const normBrand = normLoose(e.brandName);
-      return normBrand.length >= 3 && (normLogo.includes(normBrand) || normBrand.includes(normLogo));
+      const brandWords = e.brandName.toLowerCase().split(/\s+/).filter(Boolean);
+      if (brandWords.length === 0 || brandWords.length >= logoWords.length) return false;
+      for (let i = 0; i + brandWords.length <= logoWords.length; i++) {
+        if (brandWords.every((w, j) => normLoose(w) === normLoose(logoWords[i + j]))) return true;
+      }
+      return false;
     });
     if (fuzzyMatch) {
       return { brandName: fuzzyMatch.brandName, visualDescription: `Vision APIロゴ検出: ${logoName}` };
