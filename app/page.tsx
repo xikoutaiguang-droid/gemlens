@@ -645,13 +645,17 @@ export default function HomePage() {
           <Link href="/history" className="history-link" onClick={(e) => e.stopPropagation()}>
             マイページ
           </Link>
-          <Link
-            href="/history"
-            className={isStandalone ? "usage-badge" : "usage-badge badge-inactive"}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {isStandalone ? "連携済み" : "未連携"}
-          </Link>
+          {isStandalone ? (
+            <span className="usage-badge">連携済み</span>
+          ) : (
+            <Link
+              href="/history"
+              className="usage-badge badge-inactive"
+              onClick={(e) => e.stopPropagation()}
+            >
+              未連携
+            </Link>
+          )}
           {usage && plan === "free" && (
             <span className="usage-badge">
               {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}

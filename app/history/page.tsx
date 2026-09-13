@@ -421,10 +421,12 @@ export default function HistoryPage() {
         <div className="result-panel">
           <div className="mypage-overview">
             <div className="mypage-plan-row">
-              <span>
-                現在のプラン：
-                <strong>{plan === "premium" ? "PREMIUM" : plan === "standard" ? "STANDARD" : "FREE"}</strong>
-              </span>
+              <div className="mypage-plan-info">
+                <span className="mypage-plan-label">現在のプラン</span>
+                <span className={`mypage-plan-name plan-${plan}`}>
+                  {plan === "premium" ? "PREMIUM" : plan === "standard" ? "STANDARD" : "FREE"}
+                </span>
+              </div>
               <Link href="/upgrade" className="mypage-plan-btn">
                 {plan === "free" ? "プランを見る" : "管理・変更する"}
               </Link>
