@@ -107,8 +107,13 @@ async function callGeminiVision(
       return { brandName: kwMatchFromPerceived.brandName, perceivedText: perceived, matchSource: "keyword-retry" };
     }
 
-    // それでも一致しない場合のみ、ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する
-    const logoResult = await guessBrandFromLogo(base64Images, visionResult, brandEntries, perceived, useGrounding);
+    // それでも一致しない場合のみ、ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する。
+    // これはコストが発生する高精度判定（Google検索連携・Vision APIのロゴ検出フォールバック）
+    // のため、PREMIUM（またはdevKey）限定とする。
+    if (!useGrounding) {
+      return { brandName: null, perceivedText: perceived, matchSource: "logo-guess-premium-only" };
+    }
+    const logoResult = await guessBrandFromLogoWithFallback(base64Images, visionResult, brandEntries, perceived);
     return {
       ...logoResult,
       perceivedText: perceived,
@@ -116,8 +121,28 @@ async function callGeminiVision(
     };
   }
 
-  const logoResult = await guessBrandFromLogo(base64Images, visionResult, brandEntries, undefined, useGrounding);
+  // 文字が全く読めない＝記号・エンブレムのみのタグも、同様にPREMIUM限定の判定にする。
+  if (!useGrounding) {
+    return { brandName: null, matchSource: "logo-guess-premium-only" };
+  }
+  const logoResult = await guessBrandFromLogoWithFallback(base64Images, visionResult, brandEntries, undefined);
   return { ...logoResult, matchSource: "gemini-logo" };
+}
+
+// guessBrandFromLogo（Gemini自身の判断）が空振りした場合の最終手段として、
+// Vision APIのLOGO_DETECTION（多くの有名ブランドロゴを認識できる）の結果を採用する。
+// この関数はPREMIUM限定の呼び出し元からのみ呼ばれる想定。
+async function guessBrandFromLogoWithFallback(
+  base64Images: string[],
+  visionResult: VisionResult,
+  brandEntries: BrandEntry[],
+  perceivedHint: string | undefined
+): Promise<LogoGuessResult> {
+  const result = await guessBrandFromLogo(base64Images, visionResult, brandEntries, perceivedHint, true);
+  if (!result.brandName && !result.guessedBrand && visionResult.logos.length > 0) {
+    return { ...result, guessedBrand: visionResult.logos[0] };
+  }
+  return result;
 }
 
 interface CandidateResult {
@@ -163,6 +188,13 @@ function buildResult(geminiResult: GeminiVisionResult, brandEntries: BrandEntry[
         unregistered: true,
         brandName: geminiResult.guessedBrand,
         confirmReason: "AI推定（データベース未登録）",
+        debugText,
+      };
+    }
+    if (geminiResult.matchSource === "logo-guess-premium-only") {
+      return {
+        success: false,
+        message: "記号のみ・データベース未登録ブランドの高精度判定はPREMIUMプランでご利用いただけます。",
         debugText,
       };
     }
