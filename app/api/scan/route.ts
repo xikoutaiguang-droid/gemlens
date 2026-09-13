@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, norm, normPlusVariant, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/requestIp";
@@ -145,6 +145,17 @@ async function guessBrandFromLogoWithFallback(
     const directMatch = matchBrandName(logoName, brandEntries);
     if (directMatch) {
       return { brandName: directMatch.brandName, visualDescription: `Vision APIロゴ検出: ${logoName}` };
+    }
+    // Vision APIは「Lululemon Athletica」のように正式・法人名寄りの表記で返すことがあり、
+    // DB側の登録表記（例：「lululemon」）と完全一致しない場合がある。
+    // 部分一致（どちらかがどちらかを包含）でも十分に確度が高いため、これも許容する。
+    const normLogo = normLoose(logoName);
+    const fuzzyMatch = brandEntries.find((e) => {
+      const normBrand = normLoose(e.brandName);
+      return normBrand.length >= 3 && (normLogo.includes(normBrand) || normBrand.includes(normLogo));
+    });
+    if (fuzzyMatch) {
+      return { brandName: fuzzyMatch.brandName, visualDescription: `Vision APIロゴ検出: ${logoName}` };
     }
   }
   // 登録リストには一致しなかったが、Vision APIが具体的なブランド名を検出できている場合。
@@ -321,9 +332,14 @@ export async function POST(req: NextRequest) {
       debugLines.push("[FAMILY] " + geminiResult.familyCheckDebug);
     }
 
-    // フォールバック: 画像判定が「不明」の場合のみ、キーワードとの辞書照合を試みる
+    // フォールバック: AIが登録ブランド・未登録ブランドのどちらも全く特定できなかった場合のみ、
+    // キーワードとの辞書照合を試みる。
+    // 注意: guessedBrand（AIが未登録ブランドとして自信を持って推定できた結果）がある場合は
+    // 実行しない。タグ上の無関係な定型文（例：「Made in Philippines」）が、別ブランドの
+    // キーワード（例：「PHILIPP PLEIN」の「philipp」）とたまたま部分一致してしまい、
+    // 正しく特定できていた結果を誤って上書きしてしまう事故が実際に発生したため。
     let matchSource = geminiResult.matchSource || "gemini";
-    if (!geminiResult.brandName) {
+    if (!geminiResult.brandName && !geminiResult.guessedBrand) {
       const kwMatch = matchByKeywords(visionResult.text, brandEntries);
       if (kwMatch) {
         geminiResult = { brandName: kwMatch.brandName };
@@ -333,7 +349,8 @@ export async function POST(req: NextRequest) {
 
     // 最終フォールバック（プレミアム限定）: 手動登録した参照画像との類似検索
     // ロゴ・エンブレムのみで文字情報がほぼ無いタグ向け。参照画像が未登録のブランドには効果がない。
-    if (!geminiResult.brandName && useAdvancedMatching) {
+    // こちらも同様の理由でguessedBrandが既にある場合は上書きしない。
+    if (!geminiResult.brandName && !geminiResult.guessedBrand && useAdvancedMatching) {
       try {
         const vector = await embedImage(base64Images[0]);
         const matches = await queryReferenceImages(vector, 3);
