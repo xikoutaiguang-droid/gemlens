@@ -11,7 +11,7 @@ interface VisionApiResponseBody {
     error?: unknown;
     fullTextAnnotation?: { text: string };
     textAnnotations?: Array<{ description?: string }>;
-    logoAnnotations?: Array<{ description?: string }>;
+    logoAnnotations?: Array<{ description?: string; score?: number }>;
     webDetection?: {
       bestGuessLabels?: Array<{ label?: string }>;
       webEntities?: Array<{ description?: string; score?: number }>;
@@ -63,10 +63,14 @@ export async function callVisionApi(base64Data: string): Promise<VisionResult> {
     text = res.textAnnotations[0].description ?? null;
   }
 
+  // ロゴ検出結果は最優先の手がかりとして扱う設計のため、
+  // 信頼度（score）が低い候補（2位以下に多い）まで無条件に信じないよう、
+  // 一定以上のスコアのものだけを採用する。
+  const LOGO_SCORE_THRESHOLD = 0.5;
   const logos: string[] = [];
   if (res.logoAnnotations) {
     for (const l of res.logoAnnotations) {
-      if (l.description) logos.push(l.description.trim());
+      if (l.description && (l.score ?? 0) >= LOGO_SCORE_THRESHOLD) logos.push(l.description.trim());
     }
   }
 
