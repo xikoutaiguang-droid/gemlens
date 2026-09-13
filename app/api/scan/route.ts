@@ -129,20 +129,37 @@ async function callGeminiVision(
   return { ...logoResult, matchSource: "gemini-logo" };
 }
 
-// guessBrandFromLogo（Gemini自身の判断）が空振りした場合の最終手段として、
-// Vision APIのLOGO_DETECTION（多くの有名ブランドロゴを認識できる）の結果を採用する。
-// この関数はPREMIUM限定の呼び出し元からのみ呼ばれる想定。
+// Vision APIのLOGO_DETECTIONは専用に学習されたロゴ認識エンジンであり、
+// 無関係な図形に有名ブランド名を誤って返すことは基本的に無い
+// （lululemonのオメガ型ロゴのように文字が無く、Gemini自身の視覚推測や
+// 　接写画像の類似画像検索では誤認識しやすい記号ロゴでも、高精度に検出できることが多い）。
+// そのため、Geminiに視覚推測・登録リストからの選択をさせる前に、
+// まずこの検出結果を最優先で採用する。この関数はPREMIUM限定の呼び出し元からのみ呼ばれる想定。
 async function guessBrandFromLogoWithFallback(
   base64Images: string[],
   visionResult: VisionResult,
   brandEntries: BrandEntry[],
   perceivedHint: string | undefined
 ): Promise<LogoGuessResult> {
-  const result = await guessBrandFromLogo(base64Images, visionResult, brandEntries, perceivedHint, true);
-  if (!result.brandName && !result.guessedBrand && visionResult.logos.length > 0) {
-    return { ...result, guessedBrand: visionResult.logos[0] };
+  for (const logoName of visionResult.logos) {
+    const directMatch = matchBrandName(logoName, brandEntries);
+    if (directMatch) {
+      return { brandName: directMatch.brandName, visualDescription: `Vision APIロゴ検出: ${logoName}` };
+    }
   }
-  return result;
+  // 登録リストには一致しなかったが、Vision APIが具体的なブランド名を検出できている場合。
+  // これをGeminiに渡して登録リストから無理に選ばせる（誤って似ている別ブランドを
+  // 選んでしまうリスクがある）よりも、検出結果をそのまま未登録ブランドの推定として
+  // 採用する方が安全。
+  if (visionResult.logos.length > 0) {
+    return {
+      brandName: null,
+      guessedBrand: visionResult.logos[0],
+      visualDescription: `Vision APIロゴ検出: ${visionResult.logos[0]}`,
+    };
+  }
+
+  return guessBrandFromLogo(base64Images, visionResult, brandEntries, perceivedHint, true);
 }
 
 interface CandidateResult {
