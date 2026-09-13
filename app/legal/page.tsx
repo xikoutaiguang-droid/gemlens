@@ -46,7 +46,7 @@ export default function LegalPage() {
 
       <div className="legal-body">
         <h1 className="legal-title">利用規約・プライバシーポリシー</h1>
-        <p className="legal-updated">最終更新日：2026年9月12日</p>
+        <p className="legal-updated">最終更新日：2026年9月14日</p>
 
         <section className="legal-section">
           <h2>利用規約</h2>
@@ -126,16 +126,36 @@ export default function LegalPage() {
           <p>本サービスは以下の外部サービスを利用しており、機能提供に必要な範囲でデータが送信されます。</p>
           <ul>
             <li>Google（Gemini API / Cloud Vision API）：タグ画像の解析</li>
+            <li>Google（AdSense / Ad Manager）：広告の配信</li>
             <li>Vercel：本サービスのホスティング</li>
             <li>Upstash（Redis）：記録データの保存</li>
           </ul>
 
-          <h3>4. データの削除</h3>
+          <h3>4. 広告とCookieについて</h3>
+          <p>
+            本サービスでは、Googleを含む第三者配信事業者がCookieを使用して広告を配信することがあります。
+            これらのCookieにより、Google及びその提携事業者は、ユーザーの本サービスや他のサイトへの
+            過去のアクセス状況に基づいた広告を表示できます。
+          </p>
+          <p>
+            ユーザーは
+            <a
+              href="https://adssettings.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "inherit", fontWeight: 700 }}
+            >
+              Googleの広告設定
+            </a>
+            から、パーソナライズ広告の無効化を行うことができます。
+          </p>
+
+          <h3>5. データの削除</h3>
           <p>
             仕入れ記録は履歴画面からいつでもご自身で削除できます。IDコードに紐づく全データの削除をご希望の場合は、下記お問い合わせ先までご連絡ください。
           </p>
 
-          <h3>5. お問い合わせ</h3>
+          <h3>6. お問い合わせ</h3>
           <p>
             本サービスに関するお問い合わせは、
             <Link href="/contact" style={{ color: "inherit", fontWeight: 700 }}>
@@ -144,7 +164,7 @@ export default function LegalPage() {
             からご連絡ください。
           </p>
 
-          <h3>6. 本ポリシーの変更</h3>
+          <h3>7. 本ポリシーの変更</h3>
           <p>本ポリシーの内容は、必要に応じて予告なく変更することがあります。変更後の内容は本ページに掲載した時点で効力を生じるものとします。</p>
         </section>
       </div>
