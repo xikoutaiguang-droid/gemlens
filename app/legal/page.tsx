@@ -167,6 +167,12 @@ export default function LegalPage() {
           <h3>7. 本ポリシーの変更</h3>
           <p>本ポリシーの内容は、必要に応じて予告なく変更することがあります。変更後の内容は本ページに掲載した時点で効力を生じるものとします。</p>
         </section>
+
+        <p style={{ marginTop: -16, marginBottom: 32 }}>
+          <Link href="/legal/tokushoho" style={{ color: "inherit", fontWeight: 700 }}>
+            特定商取引法に基づく表記はこちら
+          </Link>
+        </p>
       </div>
     </div>
   );

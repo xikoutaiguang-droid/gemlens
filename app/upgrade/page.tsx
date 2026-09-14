@@ -226,6 +226,12 @@ export default function UpgradePage() {
           </div>
           );
         })}
+
+        <p style={{ fontSize: 12, textAlign: "center", marginTop: 8 }}>
+          <Link href="/legal/tokushoho" style={{ color: "var(--gray)" }}>
+            特定商取引法に基づく表記
+          </Link>
+        </p>
       </div>
     </div>
   );
