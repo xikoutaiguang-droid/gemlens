@@ -11,6 +11,7 @@ const anton = Anton({
 });
 
 const OFFICIAL_URL = "https://gemlens-official.vercel.app";
+const APP_URL = "https://gemlens-tawny.vercel.app";
 const OG_DESCRIPTION =
   "GEMLENSは、アパレル製品のタグを撮影するだけでAIがブランド名を判定し、古着買取・販売の相場情報も確認できる無料ツールです。会員登録は不要で、文字の読めない記号・ロゴのみのタグにも対応しています。";
 
@@ -59,9 +60,14 @@ export default function OfficialLayout({ children }: { children: React.ReactNode
             GemLens
           </div>
         </Link>
-        <Link href="/mypage" className="official-nav-btn">
-          マイページ
-        </Link>
+        <div className="official-header-nav">
+          <Link href="/mypage" className="official-nav-btn">
+            マイページ
+          </Link>
+          <a href={APP_URL} className="official-nav-btn official-nav-btn-primary">
+            アプリ
+          </a>
+        </div>
       </header>
       {children}
     </div>
