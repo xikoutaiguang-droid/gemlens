@@ -463,6 +463,10 @@ input[type="file"] { display: none; }
   font-size: 11px; font-weight: 700; padding: 8px 14px; border: 2px solid var(--black);
   background: white; text-decoration: none; color: inherit; white-space: nowrap;
 }
+.official-site-link {
+  display: block; margin-top: 12px; font-size: 11px; font-weight: 700;
+  color: var(--gray); text-decoration: underline; text-underline-offset: 2px;
+}
 
 .history-summary {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;

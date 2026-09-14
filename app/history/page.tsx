@@ -432,6 +432,15 @@ export default function HistoryPage() {
               </Link>
             </div>
 
+            <a
+              href="https://gemlens-official.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="official-site-link"
+            >
+              GEMLENS公式サイトを見る
+            </a>
+
             {!loading && records.length > 0 && (
               <>
                 <div className="period-tabs">
