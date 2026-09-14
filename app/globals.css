@@ -756,8 +756,8 @@ input.field-input[type="date"] {
   flex-shrink: 0; stroke: var(--red); fill: none; stroke-width: 2;
   stroke-linecap: round; stroke-linejoin: round; margin-top: 1px;
 }
-.official-highlight-t { font-size: 13.5px; font-weight: 700; color: var(--official-ink); margin-bottom: 2px; }
-.official-highlight-d { font-size: 12px; color: var(--official-muted); line-height: 1.6; }
+.official-highlight-t { font-size: 16px; font-weight: 700; letter-spacing: 0.2px; color: var(--official-ink); margin-bottom: 4px; }
+.official-highlight-d { font-size: 12.5px; color: var(--official-muted); line-height: 1.65; }
 
 /* 実機の操作画面をスマホ枠・手順キャプション付きでGIF化したメイン画像。
    枠や見出しはGIF側に描き込み済みのため、ここでは余白の調整のみ行う。 */
