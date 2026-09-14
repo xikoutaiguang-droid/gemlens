@@ -4,6 +4,47 @@ import { useEffect } from "react";
 import AdSlot from "../components/AdSlot";
 
 const APP_URL = "https://gemlens-tawny.vercel.app";
+const OFFICIAL_URL = "https://gemlens-official.vercel.app";
+
+const FAQ_ITEMS = [
+  { q: "会員登録は必要ですか？", a: "不要です。ブラウザからそのままお使いいただけます。仕入れ記録を残したい場合のみ、端末間の引き継ぎ用に自動発行される「IDコード」を使います。" },
+  { q: "無料で使えますか？", a: "1日10回までのスキャンと、月20件までの仕入れ記録の保存は無料です。回数無制限やより高精度な判定は有料プランでご利用いただけます。" },
+  { q: "対応しているブランドは？", a: "国内外の古着市場で流通する主要ブランドに対応しています。データベースは順次拡充しています。" },
+];
+
+// 検索エンジン・AI検索（ChatGPT/Perplexity等）がサービス内容を正確に把握できるよう、
+// 構造化データ（JSON-LD）を出力する。FAQ本文はFAQ_ITEMSと共通化し、表示内容とのズレを防ぐ。
+function StructuredData() {
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        name: "GEMLENS",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url: OFFICIAL_URL,
+        description:
+          "アパレル製品のタグを撮影するだけでAIがブランド名を判定し、古着買取・販売の相場情報も確認できるツール。",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "JPY",
+          description: "1日10回までのスキャンは無料。回数無制限・高精度判定は有料プラン。",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ_ITEMS.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
+    ],
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
+}
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return <div className="official-eyebrow">{children}</div>;
@@ -30,6 +71,7 @@ export default function OfficialSitePage() {
 
   return (
     <div className="official-page">
+      <StructuredData />
       <div className="official-container">
         <section className="official-hero">
           <Eyebrow>Tag it. Know it.</Eyebrow>
@@ -127,11 +169,7 @@ export default function OfficialSitePage() {
         <section className="official-section">
           <SectionHeading eyebrow="FAQ" title="よくある質問" />
           <div className="official-faq">
-            {[
-              { q: "会員登録は必要ですか？", a: "不要です。ブラウザからそのままお使いいただけます。仕入れ記録を残したい場合のみ、端末間の引き継ぎ用に自動発行される「IDコード」を使います。" },
-              { q: "無料で使えますか？", a: "1日10回までのスキャンと、月20件までの仕入れ記録の保存は無料です。回数無制限やより高精度な判定は有料プランでご利用いただけます。" },
-              { q: "対応しているブランドは？", a: "国内外の古着市場で流通する主要ブランドに対応しています。データベースは順次拡充しています。" },
-            ].map((item) => (
+            {FAQ_ITEMS.map((item) => (
               <div key={item.q} className="official-faq-item">
                 <div className="official-faq-q">Q. {item.q}</div>
                 <div className="official-faq-a">A. {item.a}</div>

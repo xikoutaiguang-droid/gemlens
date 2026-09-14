@@ -10,9 +10,30 @@ const anton = Anton({
   variable: "--font-anton",
 });
 
+const OFFICIAL_URL = "https://gemlens-official.vercel.app";
+const OG_DESCRIPTION =
+  "GEMLENSは、アパレル製品のタグを撮影するだけでAIがブランド名を判定し、古着買取・販売の相場情報も確認できる無料ツールです。会員登録は不要で、文字の読めない記号・ロゴのみのタグにも対応しています。";
+
 export const metadata: Metadata = {
   title: "GEMLENS 公式サイト",
-  description: "ブランドタグを撮影するだけでAIが判定するGEMLENSの公式サイトです。",
+  description: OG_DESCRIPTION,
+  keywords: ["GEMLENS", "ブランドタグ", "AI判定", "古着", "買取", "せどり", "ブランド鑑定", "相場"],
+  alternates: { canonical: OFFICIAL_URL },
+  openGraph: {
+    title: "GEMLENS | ブランドタグを撮るだけで判定",
+    description: OG_DESCRIPTION,
+    url: OFFICIAL_URL,
+    siteName: "GEMLENS",
+    locale: "ja_JP",
+    type: "website",
+    images: [{ url: `${OFFICIAL_URL}/icon-512.png`, width: 512, height: 512 }],
+  },
+  twitter: {
+    card: "summary",
+    title: "GEMLENS | ブランドタグを撮るだけで判定",
+    description: OG_DESCRIPTION,
+    images: [`${OFFICIAL_URL}/icon-512.png`],
+  },
 };
 
 export default function OfficialLayout({ children }: { children: React.ReactNode }) {
