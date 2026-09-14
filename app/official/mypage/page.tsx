@@ -80,8 +80,7 @@ export default function MyPagePage() {
       <div className="official-container">
         <section className="official-hero" style={{ paddingTop: 36 }}>
           <div className="official-eyebrow">Check your account</div>
-          <h1 className="official-h1">マイページ</h1>
-          <p className="official-lead">IDコードで現在のプランや登録日を確認したり、新しいIDコードを発行したりできます。</p>
+          <h1 className="official-h1" style={{ marginBottom: 28 }}>マイページ</h1>
 
           <div className="official-card">
             {newCode ? (
