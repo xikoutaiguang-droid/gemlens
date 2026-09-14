@@ -140,6 +140,14 @@ export default function OfficialSitePage() {
 
         <section className="official-section">
           <SectionHeading eyebrow="How it works" title="使い方" />
+          <div className="official-steps-demo">
+            <img
+              src="/official/demo.gif"
+              alt="GEMLENSでタグを撮影し、AIがブランドと相場情報を判定するまでの操作画面"
+              width={680}
+              height={1352}
+            />
+          </div>
           <ol className="official-steps">
             {[
               { n: "01", t: "タグを撮影する", d: "服のブランドタグを1〜3枚撮影します。文字が読みにくい記号だけのタグは複数枚がおすすめです。" },

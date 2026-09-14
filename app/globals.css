@@ -778,3 +778,9 @@ input.field-input[type="date"] {
   display: block; width: 100%; margin: 8px auto 0;
 }
 .official-demo img { display: block; width: 100%; height: auto; }
+
+/* 「使い方」セクション用の操作画面GIF（縦長・スマホ1台分）。 */
+.official-steps-demo {
+  display: block; width: 100%; max-width: 300px; margin: 0 auto 32px;
+}
+.official-steps-demo img { display: block; width: 100%; height: auto; }
