@@ -126,10 +126,10 @@ export default function OfficialSitePage() {
 
           <div className="official-demo">
             <img
-              src="/official/demo.gif"
-              alt="GEMLENSでタグを撮影し、AIがブランドと相場情報を判定するまでの操作画面"
-              width={680}
-              height={1352}
+              src="/official/hero-mockup.jpg"
+              alt="GEMLENSでSAINT MICHAELのブランドタグを撮影し、AIが相場情報まで判定した結果画面"
+              width={1195}
+              height={896}
             />
           </div>
 
