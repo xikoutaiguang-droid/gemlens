@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 
 const archivoBlack = Archivo_Black({
@@ -41,16 +40,18 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" className={archivoBlack.variable}>
+      <head>
+        {/* AdSenseのサイト所有権確認用（審査対象: gemlens-official.vercel.app）。
+            next/scriptのbeforeInteractive戦略はJSでの実行時挿入になり、生のHTMLには
+            リンクタグしか残らないため、AdSense側の確認クローラ（JSを実行しない）が
+            検出できなかった。素のHTMLタグとしてサーバー描画時点の<head>に直接出力する。 */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9978665653036898"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>{children}</body>
-      {/* AdSenseのサイト所有権確認用（審査対象: gemlens-official.vercel.app）。
-          next/scriptのbeforeInteractive戦略はルートレイアウトでのみ使用可能で、
-          サーバー描画された初回HTMLの<head>に確実に挿入される。 */}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9978665653036898"
-        crossOrigin="anonymous"
-        strategy="beforeInteractive"
-      />
     </html>
   );
 }
