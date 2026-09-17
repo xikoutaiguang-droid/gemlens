@@ -49,6 +49,14 @@ const GENERIC_KEYWORD_BLOCKLIST = [
   "since", "established", "est",
   "cotton", "wool", "linen", "silk", "denim", "leather",
   "collection", "select", "selectshop", "flagship", "authentic", "original",
+  // 素材表示（組成ラベルに必ず載る）
+  "rayon", "polyester", "acrylic", "nylon", "spandex", "elastane", "viscose", "cashmere",
+  // 色名
+  "black", "white", "blue", "green", "red", "gold", "silver", "navy", "beige", "khaki",
+  // 品質・製法・販売形態を表す一般語
+  "handmade", "vintage", "exclusive", "limited", "edition", "company",
+  "sport", "sports", "style", "simple", "studio", "world", "quality", "premium",
+  "classic", "standard", "natural", "basic", "product", "products", "garment",
 ];
 
 // 「MADE IN USA」「EST 1947」「SINCE 1976」のような定型句は、
@@ -57,28 +65,70 @@ const GENERIC_KEYWORD_BLOCKLIST = [
 function isGenericKeyword(rawKw: string): boolean {
   const s = rawKw.trim().toLowerCase();
   if (!s) return true;
-  if (GENERIC_KEYWORD_BLOCKLIST.includes(s.replace(/\s+/g, ""))) return true;
+  // ブロックリストとの突き合わせは、実際の照合で使うのと同じ正規化で行う。
+  // （「EDITION.」「EDIT ION」のような記号・空白の変種も同じ一般語として弾くため）
+  if (GENERIC_KEYWORD_BLOCKLIST.includes(tokenize(s).join(""))) return true;
   if (/^est\.?\s*\d{3,4}$/.test(s)) return true;
   if (/^since\s*\d{3,4}$/.test(s)) return true;
   if (/^made\s*in\s+[a-z]+$/.test(s)) return true;
   return false;
 }
 
+// キーワード照合は、単語の途中で部分一致させてはならない。
+// 例：S'YTEの誤読パターンとして登録された「SENT」は、洗濯表示に頻出する
+// 「esSENTial」の内部にも含まれるため、素朴な部分文字列検索では大量に誤爆する
+// （同様に ARMEN⊂gARMENt、LIMIT⊂LIMITed、PROD⊂PRODuct）。
+// そこで空白・記号を区切りとしたトークン列に分解し、
+// キーワードが「トークンの連続した並びとして現れる」場合のみ一致とみなす。
+function tokenize(str: unknown): string[] {
+  if (str === null || str === undefined) return [];
+  return String(str)
+    .toLowerCase()
+    .replace(/['’.,]/g, "") // 「S'YTE」「S.Y.T.E」は語中の記号なので詰めて1語にする
+    .replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9faf]+/g, " ") // それ以外の記号・空白は区切り
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function tokensContainSequence(textTokens: string[], kwTokens: string[]): boolean {
+  if (kwTokens.length === 0 || kwTokens.length > textTokens.length) return false;
+  for (let i = 0; i + kwTokens.length <= textTokens.length; i++) {
+    let matched = true;
+    for (let j = 0; j < kwTokens.length; j++) {
+      if (textTokens[i + j] !== kwTokens[j]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return true;
+  }
+  return false;
+}
+
 export function matchByKeywords(rawText: string | null, brandEntries: BrandEntry[]): BrandEntry | null {
   if (!rawText) return null;
 
-  const normText = norm(rawText);
+  const textTokens = tokenize(rawText);
+  if (textTokens.length === 0) return null;
+  const textTokenSet = new Set(textTokens);
+
   let best: BrandEntry | null = null;
   let bestLen = 0;
 
   for (const entry of brandEntries) {
     for (const kw of entry.keywords) {
       if (isGenericKeyword(kw)) continue;
-      const normKw = norm(kw);
-      if (normKw.length < 3) continue;
-      if (normText.includes(normKw) && normKw.length > bestLen) {
+      const kwTokens = tokenize(kw);
+      if (kwTokens.length === 0) continue;
+
+      const joined = kwTokens.join("");
+      if (joined.length < 3 || joined.length <= bestLen) continue;
+
+      // (a) トークンの並びとして一致（例：「SAINT M1CH43L」）
+      // (b) 空白ごと繋がって読み取られた場合に備え、1トークンと完全一致（例：「BEAMSPLUS」）
+      if (tokensContainSequence(textTokens, kwTokens) || textTokenSet.has(joined)) {
         best = entry;
-        bestLen = normKw.length;
+        bestLen = joined.length;
       }
     }
   }
