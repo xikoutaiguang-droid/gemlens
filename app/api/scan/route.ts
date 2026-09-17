@@ -12,6 +12,7 @@ import {
 import { matchBrandName, matchByKeywords, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
+import { recordUnmatchedRead } from "@/lib/unmatchedLog";
 import { getClientIp } from "@/lib/requestIp";
 import { embedImage } from "@/lib/embeddings";
 import { queryReferenceImages } from "@/lib/vectorStore";
@@ -204,6 +205,9 @@ interface ScanResult {
   familyAlert?: boolean;
   guessedBrand?: string;
   message?: string;
+  // 判定できなかった場合でも、タグから読み取れた文字はユーザーに返す。
+  // 自分で検索して相場を確かめる手掛かりになるため（内部デバッグ情報とは別物）。
+  perceivedText?: string;
   debugText?: string;
   limitReached?: boolean;
   marketInfo?: MarketAdvice | null;
@@ -232,12 +236,14 @@ function buildResult(geminiResult: GeminiVisionResult, brandEntries: BrandEntry[
       return {
         success: false,
         message: "記号のみ・データベース未登録ブランドの高精度判定はPREMIUMプランでご利用いただけます。",
+        perceivedText: geminiResult.perceivedText,
         debugText,
       };
     }
     return {
       success: false,
       message: "ブランドを特定できませんでした。タグをより鮮明に撮影して再試行してください。",
+      perceivedText: geminiResult.perceivedText,
       debugText,
     };
   }
@@ -249,6 +255,7 @@ function buildResult(geminiResult: GeminiVisionResult, brandEntries: BrandEntry[
     return {
       success: false,
       message: `「${geminiName}」はデータベースに登録されていません。`,
+      perceivedText: geminiResult.perceivedText ?? geminiName,
       debugText,
     };
   }
@@ -385,6 +392,12 @@ export async function POST(req: NextRequest) {
     // 一般ユーザーの画面に出しても意味が分からないうえ、実装の詳細が露出する。
     const debugText = isDeveloper ? debugLines.join("\n") : "";
     const result = buildResult(geminiResult, brandEntries, debugText);
+
+    // 判定できなかったタグの読み取り結果を記録しておき、DBへ追加すべき
+    // ブランドを出現回数順に把握できるようにする。
+    if (!result.success) {
+      await recordUnmatchedRead(result.perceivedText);
+    }
 
     // ブランド確定後に相場情報を取得
     if (result.success && result.single && result.brandName) {

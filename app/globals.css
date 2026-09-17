@@ -287,6 +287,17 @@ header .logo-text {
 .error-bar { width: 36px; height: 4px; background: var(--red); border-radius: 0; }
 #disp-error { font-size: 15px; color: #333; line-height: 1.6; font-weight: 600; }
 
+/* 判定できなかった場合に、読み取れた文字と相場確認の導線を出す領域 */
+#perceived-wrap { border: 2px solid var(--black); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+#perceived-label { font-size: 10px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
+#perceived-text { font-size: 16px; font-weight: 700; color: var(--black); word-break: break-word; line-height: 1.5; }
+#perceived-market-link {
+  display: inline-block; align-self: flex-start;
+  background: var(--black); color: #fff; text-decoration: none;
+  font-size: 13px; font-weight: 700; padding: 10px 16px;
+}
+#perceived-note { font-size: 11px; color: var(--gray); line-height: 1.6; }
+
 #debug-wrap { margin-top: 20px; width: 100%; border-top: 2px solid #eee; padding-top: 12px; }
 #debug-label { font-size: 10px; color: #ccc; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
 #disp-debug  { font-size: 11px; color: #bbb; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }

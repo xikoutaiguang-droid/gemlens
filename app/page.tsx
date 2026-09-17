@@ -62,6 +62,7 @@ interface ScanResult {
   familyAlert?: boolean;
   guessedBrand?: string;
   message?: string;
+  perceivedText?: string;
   debugText?: string;
   limitReached?: boolean;
   marketInfo?: MarketAdvice | null;
@@ -805,6 +806,25 @@ export default function HomePage() {
                 <div className="error-bar" />
                 <div id="disp-error">{result?.message || errorMessage || "ブランドを特定できませんでした。"}</div>
               </div>
+              {result?.perceivedText && (
+                <div id="perceived-wrap">
+                  <div id="perceived-label">タグから読み取れた文字</div>
+                  <div id="perceived-text">{result.perceivedText}</div>
+                  <a
+                    id="perceived-market-link"
+                    href={`https://jp.mercari.com/search?keyword=${encodeURIComponent(
+                      result.perceivedText
+                    )}&status=sold_out`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    メルカリの売却実績を見る
+                  </a>
+                  <div id="perceived-note">
+                    データベースに未登録のブランドです。無名とは限らないため、実際の取引価格をご確認ください。
+                  </div>
+                </div>
+              )}
               {result?.limitReached && plan === "free" && (
                 <RewardedAdButton usage={usage} onGranted={setUsage} />
               )}
