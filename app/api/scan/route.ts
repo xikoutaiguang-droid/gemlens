@@ -381,7 +381,9 @@ export async function POST(req: NextRequest) {
 
     debugLines.push(`[MATCH] ${geminiResult.brandName || "判定不可"}（${matchSource}）`);
 
-    const debugText = debugLines.join("\n");
+    // 判定の内部情報（読み取り結果・照合経路など）は開発者のみに返す。
+    // 一般ユーザーの画面に出しても意味が分からないうえ、実装の詳細が露出する。
+    const debugText = isDeveloper ? debugLines.join("\n") : "";
     const result = buildResult(geminiResult, brandEntries, debugText);
 
     // ブランド確定後に相場情報を取得
@@ -398,7 +400,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[scan API ERROR]", error);
     return NextResponse.json(
-      { success: false, message: "システムエラーが発生しました。", debugText: String(error) },
+      // 例外の内容はサーバーログ（上のconsole.error）にのみ残す。
+      // 内部の実装詳細が含まれうるため、レスポンスには載せない。
+      { success: false, message: "システムエラーが発生しました。" },
       { status: 500 }
     );
   }
