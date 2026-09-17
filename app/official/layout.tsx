@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   description: OG_DESCRIPTION,
   keywords: ["GEMLENS", "ブランドタグ", "AI判定", "古着", "買取", "せどり", "ブランド鑑定", "相場"],
   alternates: { canonical: OFFICIAL_URL },
+  verification: { google: "F28c8je94zr6ebnB5jIPenE-VNSVGMP0yQQ5vjmGvXc" },
   openGraph: {
     title: "GEMLENS | ブランドタグを撮るだけで判定",
     description: OG_DESCRIPTION,
