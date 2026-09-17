@@ -90,9 +90,9 @@ export default function TokushohoPage() {
 
           <h3>販売価格</h3>
           <p>
-            STANDARDプラン：月額500円（税込）
+            STANDARDプラン：月額980円（税込）
             <br />
-            PREMIUMプラン：月額980円（税込）（初回7日間無料トライアルあり）
+            PREMIUMプラン：月額2,980円（税込）（初回7日間無料トライアルあり）
             <br />
             ※価格は
             <Link href="/upgrade" style={{ color: "inherit", fontWeight: 700 }}>

@@ -10,13 +10,13 @@ const PLANS: { id: "standard" | "premium"; name: string; price: string; trial?: 
   {
     id: "standard",
     name: "STANDARD",
-    price: "¥500 / 月",
+    price: "¥980 / 月",
     features: ["1日のスキャン回数上限を撤廃"],
   },
   {
     id: "premium",
     name: "PREMIUM",
-    price: "¥980 / 月",
+    price: "¥2,980 / 月",
     trial: "7日間無料でお試しいただけます",
     features: ["1日のスキャン回数上限を撤廃", "Google検索連携による高精度ブランド判定", "画像類似検索フォールバック（ロゴのみのタグに強い）"],
   },
