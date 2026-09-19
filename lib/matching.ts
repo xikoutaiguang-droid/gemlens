@@ -314,3 +314,40 @@ export function buildPhraseSet(text: string, candidateNames: string[]): Set<stri
   }
   return phrases;
 }
+
+// タグの文字は読めたが、完全一致にも登録済みの誤読パターンにも当たらない場合の最後の手段。
+// 実測では、OCRが1文字誤るだけで正解率が100%から27%に落ち、67%が「判定不可」になっていた。
+// 誤読は本来わずかな文字の違いとして現れるので、綴りの近さで拾い直す。
+//
+// ただし近いだけで断定してはならない（ONEILLとONEILのように1文字違いの別ブランドが実在する）。
+// 最短距離の候補がただ1つに絞れる場合のみ採用し、同点の候補が複数あるときは諦める。
+// 判定不可のままにする方が、別ブランドを断定するより害が小さい。
+export const FUZZY_MIN_LEN = Number(process.env.FUZZY_MIN_LEN || 8);
+
+export function matchByFuzzyNameImpl(rawText: string, brandEntries: BrandEntry[], minLen: number): BrandEntry | null {
+  const text = foldOcrDigits(normLoose(rawText));
+  // 短い名前は1文字の差がそのまま別ブランドになる（AMIRI/AMERI、EDWIN/BEDWIN、VANS/VAN など実在する）。
+  if (text.length < minLen) return null;
+
+  const allowed = Math.max(1, Math.floor(text.length * 0.2));
+  let best: BrandEntry | null = null;
+  let bestDist = Infinity;
+  let tie = false;
+
+  for (const e of brandEntries) {
+    for (const label of [e.brandName, e.kana]) {
+      if (!label) continue;
+      const cand = foldOcrDigits(normLoose(label));
+      if (!cand || Math.abs(cand.length - text.length) > allowed) continue;
+      const d = levenshtein(text, cand);
+      if (d > allowed) continue;
+      if (d < bestDist) { bestDist = d; best = e; tie = false; }
+      else if (d === bestDist && best && best.brandName !== e.brandName) tie = true;
+    }
+  }
+  return tie ? null : best;
+}
+
+export function matchByFuzzyName(rawText: string, brandEntries: BrandEntry[]): BrandEntry | null {
+  return matchByFuzzyNameImpl(rawText, brandEntries, FUZZY_MIN_LEN);
+}

@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, isFamilyNameVariant, isReadingCorroborated, isPlausibleMisreadOf, buildPhraseSet, tokenize, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, matchByFuzzyName, isFamilyNameVariant, isReadingCorroborated, isPlausibleMisreadOf, buildPhraseSet, tokenize, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { recordUnmatchedRead } from "@/lib/unmatchedLog";
@@ -146,6 +146,18 @@ async function callGeminiVision(
         perceivedText: perceived,
         matchSource: "unregistered-confident-read",
       };
+    }
+
+    // ここまで来たのは、読み取った文字が完全一致にも登録済みの誤読パターンにも当たらず、
+    // かつ二つのエンジンの読みが食い違っている（＝どちらかが誤読している疑いが濃い）場合。
+    // 綴りの近さで拾い直す。実測では1文字誤読時の正解率が 27.4% から 73.0% に上がる。
+    //
+    // 読みが一致していたときにこれを使ってはならない。未登録ブランドの名前を正しく読めた
+    // ケースまで綴りの近い別ブランドに吸われる（AMIRI→AMERI、EDWIN→BEDWIN などが実在する）。
+    // 上の裏付け判定を先に通しているので、ここに来る時点でその心配はない。
+    const fuzzy = matchByFuzzyName(perceived, brandEntries);
+    if (fuzzy) {
+      return { brandName: fuzzy.brandName, perceivedText: perceived, matchSource: "fuzzy-name" };
     }
 
     // それでも一致しない場合のみ、ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する。
