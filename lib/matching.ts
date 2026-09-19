@@ -12,11 +12,18 @@ export function norm(str: unknown): string {
   return String(str).toLowerCase().replace(/\s+/g, "").trim();
 }
 
-// 大文字小文字・空白・&/-/.等の記号ゆれを許容する強めの正規化
+// 大文字小文字・空白・&/-/.等の記号ゆれを許容する強めの正規化。
+// アクセント記号も落とす（「agnès b.」と「agnes b.」、「ADAM ET ROPÉ」と「ADAM ET ROPE」は
+// タグの印字や出品タイトルで両方の表記が使われるため、別ブランド扱いにしてはならない）。
+// NFDで分解したあとラテン文字の結合記号だけを除き、NFCで再結合する。
+// 仮名の濁点（U+3099）はこの範囲に含まれないので「が」が「か」に潰れることはない。
 export function normLoose(str: unknown): string {
   if (str === null || str === undefined) return "";
   return String(str)
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .normalize("NFC")
     .replace(/[\s&\-.,'’]/g, "")
     .trim();
 }
@@ -57,6 +64,16 @@ const GENERIC_KEYWORD_BLOCKLIST = [
   "handmade", "vintage", "exclusive", "limited", "edition", "company",
   "sport", "sports", "style", "simple", "studio", "world", "quality", "premium",
   "classic", "standard", "natural", "basic", "product", "products", "garment",
+  // 複数ブランドに登録されているが、どのブランドの名称でもない語（実データの監査で判明）。
+  // 素材・製法・産地・法人格・品目を指すだけで、ブランドの特定には使えない。
+  "goretex", "goodyearwelted", "savilerow", "northampton", "napoli", "sartoria",
+  "timewornclothing", "eyewear", "shirt", "shirts", "ma1",
+  "ltd", "inc", "corp", "gmbh", "spa", "srl", "co",
+  // ライン名・産地・素材を指す語。単独ではブランドを特定できない。
+  "homme", "femme", "uomo", "donna", "como", "hanpu", "帆布", "brown",
+  // タグの項目名。「COLOR」はKolorの誤読パターン（K↔C）として登録されていたが、
+  // 品質表示タグのほぼ全てに印字される語であり、そのままでは大量に誤爆する。
+  "color", "colour", "size", "name", "item", "lot", "fabric", "lining", "material",
 ];
 
 // 「MADE IN USA」「EST 1947」「SINCE 1976」のような定型句は、
@@ -70,7 +87,7 @@ function isGenericKeyword(rawKw: string): boolean {
   if (GENERIC_KEYWORD_BLOCKLIST.includes(tokenize(s).join(""))) return true;
   if (/^est\.?\s*\d{3,4}$/.test(s)) return true;
   if (/^since\s*\d{3,4}$/.test(s)) return true;
-  if (/^made\s*in\s+[a-z]+$/.test(s)) return true;
+  if (/^(hand)?made\s*in\s+[a-z]+$/.test(s)) return true;
   return false;
 }
 
@@ -131,21 +148,42 @@ export function matchByKeywords(rawText: string | null, brandEntries: BrandEntry
 
   let best: BrandEntry | null = null;
   let bestLen = 0;
+  let bestIsOwnName = false;
 
   for (const entry of brandEntries) {
-    for (const kw of entry.keywords) {
+    const entryNameKey = tokenize(entry.brandName).join(" ");
+    // カナ表記も「そのブランド自身の名前」として扱う。系列ブランドが揃って
+    // 親のカナ（例：「ビームス」）を登録しているため、名前側を優先しないと
+    // カナだけ読み取れたタグが常に同じ系列ブランドに吸われてしまう。
+    const entryKanaKey = tokenize(entry.kana).join(" ");
+    // ブランド名とカナ表記は、キーワード欄への登録漏れがあっても常に照合対象にする。
+    // 実データでは名称の登録漏れが33件、カナの登録漏れが378件あり、
+    // 「タグにブランド名がそのまま印字されているのに見つからない」状態になっていた
+    // （例：MIKI HOUSE はキーワードが「MIKIHOUSE」のみで、空白入りの印字に当たらない）。
+    for (const kw of [entry.brandName, entry.kana, ...entry.keywords]) {
       if (isGenericKeyword(kw)) continue;
       const kwTokens = tokenize(kw);
       if (kwTokens.length === 0) continue;
 
       const joined = kwTokens.join("");
-      if (joined.length < 3 || joined.length <= bestLen) continue;
+      if (joined.length < 3) continue;
+
+      // 同じ語が複数のブランドに登録されていることがある（実データで416件確認）。
+      // 例：「BURBERRY」はBURBERRY自身の名称であると同時に、
+      // BLACK LABEL CRESTBRIDGEの読み取りキーワードにも登録されている。
+      // 長さが同じで競合した場合は、その語を正式名称として持つブランドを優先しないと、
+      // タグにブランド名がそのまま書かれているのに別ブランドと判定されてしまう。
+      const kwKey = kwTokens.join(" ");
+      const isOwnName = kwKey === entryNameKey || (entryKanaKey !== "" && kwKey === entryKanaKey);
+      if (joined.length < bestLen) continue;
+      if (joined.length === bestLen && !(isOwnName && !bestIsOwnName)) continue;
 
       // (a) トークンの並びとして一致（例：「SAINT M1CH43L」）
       // (b) 空白ごと繋がって読み取られた場合に備え、1トークンと完全一致（例：「BEAMSPLUS」）
       if (tokensContainSequence(textTokens, kwTokens) || textTokenSet.has(joined)) {
         best = entry;
         bestLen = joined.length;
+        bestIsOwnName = isOwnName;
       }
     }
   }
