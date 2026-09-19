@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, isFamilyNameVariant, isReadingCorroborated, isPlausibleMisreadOf, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, isFamilyNameVariant, isReadingCorroborated, isPlausibleMisreadOf, buildPhraseSet, tokenize, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { recordUnmatchedRead } from "@/lib/unmatchedLog";
@@ -64,8 +64,26 @@ async function callGeminiVision(
         // 一方でVision APIのWeb検出結果（類似画像のラベル・出品タイトル）には、
         // 過去に他の出品者が同じ商品を正しく表記した結果として系列ブランド名が
         // 既に含まれていることがあるため、追加コスト無しでまずこちらを確認する。
-        const webHintsBlob = normPlusVariant([...visionResult.webNames, ...visionResult.pageTitles].join(" "));
-        let variantEntry = children.find((c) => webHintsBlob.includes(normPlusVariant(c.brandName)));
+        // Web検出の文字列は、空白を潰した部分文字列で照合してはならない。
+        // 「BEAMS FLAGSHIP STORE」のような無関係な語の途中に子ブランド名「BEAMS F」が
+        // 偶然含まれ、系列違いと誤判定する（実測で確認）。
+        // 語の並びとして現れる場合だけを一致とみなす。
+        const hintPhrases = buildPhraseSet(
+          [...visionResult.webNames, ...visionResult.pageTitles].join(" "),
+          children.map((c) => c.brandName)
+        );
+        // 「X HOMME」と「X HOMME PLUS」のように、複数の子ブランドが同時に該当することがある。
+        // find は先に見つかった方を返すため、より短い（＝具体性の低い）子を選んでしまう。
+        // 該当する中で最も具体的なもの（正規化後の文字数が最大）を採る。
+        const pickMostSpecific = (cs: BrandEntry[]): BrandEntry | undefined =>
+          cs.reduce<BrandEntry | undefined>(
+            (best, c) =>
+              !best || normPlusVariant(c.brandName).length > normPlusVariant(best.brandName).length ? c : best,
+            undefined
+          );
+        let variantEntry = pickMostSpecific(
+          children.filter((c) => hintPhrases.has(normPlusVariant(c.brandName)))
+        );
         let visualResult: string | null = null;
         let matchedVia: "family-web-hint" | "family-variant-check" | null = variantEntry ? "family-web-hint" : null;
 
@@ -77,10 +95,13 @@ async function callGeminiVision(
             // 「+」「＋」と「PLUS」の表記ゆれを吸収した上で、候補（children）の中から
             // 部分一致も許容して探すことで、完全一致の失敗によるフォールバックを防ぐ。
             const normVariant = normPlusVariant(visualResult);
-            variantEntry = children.find((c) => {
-              const normChild = normPlusVariant(c.brandName);
-              return normChild === normVariant || normVariant.includes(normChild) || normChild.includes(normVariant);
-            });
+            const answerPhrases = buildPhraseSet(visualResult, children.map((c) => c.brandName));
+            variantEntry = pickMostSpecific(
+              children.filter((c) => {
+                const normChild = normPlusVariant(c.brandName);
+                return normChild === normVariant || answerPhrases.has(normChild);
+              })
+            );
             if (variantEntry) matchedVia = "family-variant-check";
           }
         }
@@ -114,7 +135,11 @@ async function callGeminiVision(
     // （実例：タグに「STEFANEL」と明記されているのに「CELINE」と回答した）。
     // 読めているのに登録が無いだけなら、読めた文字をそのまま未登録ブランドとして返す。
     // これはユーザーにとって正確であるうえ、Gemini呼び出しを1回節約できる。
-    if (isReadingCorroborated(perceived, visionResult.text)) {
+    // ただし1文字だけの読み取りは、ブランド名ではなく図形をそのまま文字と見なしただけの
+    // ことが多い（実測：アーチ状のロゴが「A」と読まれ、未登録ブランド「A」として返っていた）。
+    // 登録されている最短のブランド名でも2文字はあるため、それ未満は読めなかった扱いにする。
+    const perceivedLen = tokenize(perceived).join("").length;
+    if (perceivedLen >= 2 && isReadingCorroborated(perceived, visionResult.text)) {
       return {
         brandName: null,
         guessedBrand: perceived,

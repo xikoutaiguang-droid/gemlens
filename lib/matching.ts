@@ -50,6 +50,14 @@ export function matchBrandName(rawName: string, brandEntries: BrandEntry[]): Bra
 const GENERIC_KEYWORD_BLOCKLIST = [
   "california", "usa", "japan", "italy", "france", "uk", "england", "belgium",
   "germany", "portugal", "spain",
+  // 生産国はタグに必ず載る。「MADE IN」が付かず国名だけ登録されている行があり、
+  // 監査で「MADE IN NEW ZEALAND」が国名経由で別ブランドに一致することを確認した。
+  "newzealand", "australia", "canada", "mexico", "brazil", "peru", "turkey",
+  "china", "korea", "southkorea", "vietnam", "thailand", "indonesia", "india",
+  "cambodia", "myanmar", "bangladesh", "philippines", "malaysia", "taiwan",
+  "srilanka", "pakistan", "morocco", "tunisia", "egypt", "romania", "bulgaria",
+  "poland", "hungary", "austria", "switzerland", "netherlands", "denmark",
+  "sweden", "norway", "finland", "ireland", "scotland", "wales",
   "newyork", "paris", "london", "tokyo", "osaka",
   "bologna", "parma", "milan", "milano", "florence", "firenze", "venice", "venezia",
   "turin", "torino", "rome", "roma", "naples", "antwerp", "brussels",
@@ -74,12 +82,23 @@ const GENERIC_KEYWORD_BLOCKLIST = [
   // タグの項目名。「COLOR」はKolorの誤読パターン（K↔C）として登録されていたが、
   // 品質表示タグのほぼ全てに印字される語であり、そのままでは大量に誤爆する。
   "color", "colour", "size", "name", "item", "lot", "fabric", "lining", "material",
+  // 全キーワード監査で「複数ブランドが取り合っている一般語」として確認されたもの。
+  // 品目・素材・製法・部材メーカー・キャラクター名であって、ブランドの特定には使えない。
+  "golf", "jeans", "coat", "coats", "vibram", "seaislandcotton", "cordovan",
+  "コードバン", "シェルコードバン", "アニリン", "antwerpsix", "snoopy", "arc",
+  // 複数の無関係なブランドが同じライン名を使っている（THE NORTH FACE PURPLE LABEL と
+  // Ralph Lauren Purple Label、BLACK LABEL CRESTBRIDGE と Ralph Lauren Black Label）。
+  // ライン名だけではどちらか決められない。
+  "purplelabel", "blacklabel", "bluelabel", "redlabel",
+  "パープルレーベル", "ブラックレーベル", "ブルーレーベル", "レッドレーベル",
+  // CHANEL と CHEANEY の双方が誤読パターンとして登録しており、判別できない。
+  "channel",
 ];
 
 // 「MADE IN USA」「EST 1947」「SINCE 1976」のような定型句は、
 // 国名・年号だけが変わる形でどのブランドのタグにも登場しうるため、
 // パターンでまとめて除外する。
-function isGenericKeyword(rawKw: string): boolean {
+export function isGenericKeyword(rawKw: string): boolean {
   const s = rawKw.trim().toLowerCase();
   if (!s) return true;
   // ブロックリストとの突き合わせは、実際の照合で使うのと同じ正規化で行う。
@@ -87,7 +106,8 @@ function isGenericKeyword(rawKw: string): boolean {
   if (GENERIC_KEYWORD_BLOCKLIST.includes(tokenize(s).join(""))) return true;
   if (/^est\.?\s*\d{3,4}$/.test(s)) return true;
   if (/^since\s*\d{3,4}$/.test(s)) return true;
-  if (/^(hand)?made\s*in\s+[a-z]+$/.test(s)) return true;
+  // 国名が複数語のものがある（MADE IN NEW ZEALAND / MADE IN SOUTH KOREA など）。
+  if (/^(hand)?made\s*in\s+[a-z]+(\s+[a-z]+)*$/.test(s)) return true;
   return false;
 }
 
@@ -97,10 +117,33 @@ function isGenericKeyword(rawKw: string): boolean {
 // （同様に ARMEN⊂gARMENt、LIMIT⊂LIMITed、PROD⊂PRODuct）。
 // そこで空白・記号を区切りとしたトークン列に分解し、
 // キーワードが「トークンの連続した並びとして現れる」場合のみ一致とみなす。
+// トークン分割は1回の照合で5万回以上呼ばれ、同じ文字列（ブランド名・キーワード）を
+// 何度も分割し直している。結果は入力に対して一意なので記憶しておく。
+// 上限を設けるのは、利用者が送ってくるタグ本文が毎回異なり、無制限だと増え続けるため。
+const TOKENIZE_CACHE = new Map<string, string[]>();
+const TOKENIZE_CACHE_MAX = 200000;
+
 export function tokenize(str: unknown): string[] {
+  if (str === null || str === undefined) return [];
+  const raw = String(str);
+  const hit = TOKENIZE_CACHE.get(raw);
+  if (hit) return hit;
+  const result = tokenizeUncached(raw);
+  if (TOKENIZE_CACHE.size < TOKENIZE_CACHE_MAX) TOKENIZE_CACHE.set(raw, result);
+  return result;
+}
+
+function tokenizeUncached(str: unknown): string[] {
   if (str === null || str === undefined) return [];
   return String(str)
     .toLowerCase()
+    // アクセント付きラテン文字をアクセント無しに畳む。これをしないと、続く文字種の
+    // 絞り込みでアクセント文字が区切り扱いになり、ブランド名が断片に割れる
+    // （実測：Hermès→["herm","s"]、COMME des GARÇONS→["comme","des","gar","ons"]）。
+    // 仮名の濁点（U+3099）はこの範囲外なので、NFCで元に戻る。
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .normalize("NFC")
     .replace(/['’.,]/g, "") // 「S'YTE」「S.Y.T.E」は語中の記号なので詰めて1語にする
     .replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9faf]+/g, " ") // それ以外の記号・空白は区切り
     .split(/\s+/)
@@ -254,4 +297,20 @@ export function isPlausibleMisreadOf(candidate: string, perceived: string): bool
 
   const allowed = Math.max(2, Math.floor(Math.max(a.length, b.length) * 0.34));
   return levenshtein(a, b) <= allowed;
+}
+
+// 与えられた文章を語に分け、連続する語のまとまり（最大で候補ブランド名の語数まで）を
+// 正規化して列挙する。ブランド名が「語の並びとして」登場する場合だけを一致とみなすための集合。
+// 単純な部分文字列一致だと、より長い語の内部に短いブランド名が偶然含まれて誤爆する
+// （実測：Web検出の「BEAMS FLAGSHIP STORE」が子ブランド「BEAMS F」に一致した）。
+export function buildPhraseSet(text: string, candidateNames: string[]): Set<string> {
+  const words = text.split(/\s+/).filter(Boolean);
+  const maxWords = Math.max(1, ...candidateNames.map((n) => n.split(/\s+/).filter(Boolean).length));
+  const phrases = new Set<string>();
+  for (let i = 0; i < words.length; i++) {
+    for (let n = 1; n <= maxWords && i + n <= words.length; n++) {
+      phrases.add(normPlusVariant(words.slice(i, i + n).join(" ")));
+    }
+  }
+  return phrases;
 }
