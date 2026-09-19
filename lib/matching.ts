@@ -152,3 +152,68 @@ export function matchByKeywords(rawText: string | null, brandEntries: BrandEntry
 
   return best;
 }
+
+// GeminiがOCRで読み取ったブランド名が、Vision APIのOCR結果にも同じ文字列として
+// 現れているかを確認する。互いに独立した2つのエンジンが同じ文字を読んでいる場合、
+// その読み取りは「誤読かもしれない候補」ではなく確定した事実として扱ってよい。
+export function isReadingCorroborated(perceived: string, ocrText: string | null | undefined): boolean {
+  if (!ocrText) return false;
+  const kwTokens = tokenize(perceived);
+  if (kwTokens.length === 0) return false;
+  const textTokens = tokenize(ocrText);
+  if (tokensContainSequence(textTokens, kwTokens)) return true;
+  return new Set(textTokens).has(kwTokens.join(""));
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(
+        prev[j] + 1,
+        cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+// OCRで最も頻繁に起きる誤りは、字形の似た数字への置換（O→0、I→1、E→3、S→5 など）である。
+// 誤読の許容範囲を測る前にこの置換を元に戻しておくことで、
+// 「N33DL35 → NEEDLES」のような正当な誤読を距離計算で弾かずに済む。
+// 逆方向（文字→数字）には変換しないため、綴りの異なる別ブランド同士が
+// 偶然一致してしまうことはない。
+const OCR_DIGIT_FOLD: Record<string, string> = {
+  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "6": "g", "7": "t", "8": "b",
+};
+
+function foldOcrDigits(s: string): string {
+  return s.replace(/[01345678]/g, (d) => OCR_DIGIT_FOLD[d] ?? d);
+}
+
+// タグの文字が読めているのに登録リストに無い場合、AIに「リストの中から選ばせる」と
+// 読み取り結果とかけ離れた有名ブランドを自信を持って返してくることがある
+// （実例：タグに「STEFANEL」と明記されているのに「CELINE」を返した）。
+// 誤読は本来1〜数文字の置換・欠落として現れるため、読み取った文字から
+// 誤読として説明できる範囲にある候補だけを採用する。
+export function isPlausibleMisreadOf(candidate: string, perceived: string): boolean {
+  const a = foldOcrDigits(normLoose(candidate));
+  const b = foldOcrDigits(normLoose(perceived));
+  if (!a || !b) return false;
+  if (a === b) return true;
+
+  // 一方が他方を語として含む場合（例：「BEAMS」と「BEAMS BOY」）は誤読ではなく
+  // 表記の粒度の違いなので許容する。
+  const at = tokenize(candidate);
+  const bt = tokenize(perceived);
+  if (tokensContainSequence(bt, at) || tokensContainSequence(at, bt)) return true;
+
+  const allowed = Math.max(2, Math.floor(Math.max(a.length, b.length) * 0.34));
+  return levenshtein(a, b) <= allowed;
+}

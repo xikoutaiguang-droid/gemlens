@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, isFamilyNameVariant, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, isFamilyNameVariant, isReadingCorroborated, isPlausibleMisreadOf, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { recordUnmatchedRead } from "@/lib/unmatchedLog";
@@ -107,6 +107,22 @@ async function callGeminiVision(
       return { brandName: kwMatchFromPerceived.brandName, perceivedText: perceived, matchSource: "keyword-retry" };
     }
 
+    // Vision APIのOCRとGeminiの読み取りが同じ文字列で一致している場合、
+    // それは「誤読かもしれない候補」ではなく確定した読み取り結果である。
+    // ここでロゴ推測にフォールバックすると、AIが登録リスト（1500件超）の中から
+    // 見た目の印象が近いだけの別ブランドを選んで断定してしまう
+    // （実例：タグに「STEFANEL」と明記されているのに「CELINE」と回答した）。
+    // 読めているのに登録が無いだけなら、読めた文字をそのまま未登録ブランドとして返す。
+    // これはユーザーにとって正確であるうえ、Gemini呼び出しを1回節約できる。
+    if (isReadingCorroborated(perceived, visionResult.text)) {
+      return {
+        brandName: null,
+        guessedBrand: perceived,
+        perceivedText: perceived,
+        matchSource: "unregistered-confident-read",
+      };
+    }
+
     // それでも一致しない場合のみ、ロゴ形状・Google画像検索相当のWeb推定情報を手がかりに再挑戦する。
     // これはコストが発生する高精度判定（Google検索連携・Vision APIのロゴ検出フォールバック）
     // のため、PREMIUM（またはdevKey）限定とする。
@@ -179,7 +195,19 @@ async function guessBrandFromLogoWithFallback(
     };
   }
 
-  return guessBrandFromLogo(base64Images, visionResult, brandEntries, perceivedHint, true);
+  const aiGuess = await guessBrandFromLogo(base64Images, visionResult, brandEntries, perceivedHint, true);
+
+  // 文字が読めている場合、AIが返す「登録リストとの一致」は、その読み取り文字から
+  // 誤読として説明できる範囲になければならない。かけ離れた別ブランドを返してきた場合は、
+  // 断定させずに読み取った文字を未登録ブランドとして扱う。
+  if (perceivedHint && aiGuess.brandName && !isPlausibleMisreadOf(aiGuess.brandName, perceivedHint)) {
+    return {
+      brandName: null,
+      guessedBrand: perceivedHint,
+      visualDescription: aiGuess.visualDescription,
+    };
+  }
+  return aiGuess;
 }
 
 interface CandidateResult {
@@ -228,6 +256,7 @@ function buildResult(geminiResult: GeminiVisionResult, brandEntries: BrandEntry[
         unregistered: true,
         brandName: geminiResult.guessedBrand,
         confirmReason: "AI推定（データベース未登録）",
+        perceivedText: geminiResult.perceivedText,
         debugText,
       };
     }
@@ -357,7 +386,7 @@ export async function POST(req: NextRequest) {
     if (!geminiResult.brandName && !geminiResult.guessedBrand) {
       const kwMatch = matchByKeywords(visionResult.text, brandEntries);
       if (kwMatch) {
-        geminiResult = { brandName: kwMatch.brandName };
+        geminiResult = { ...geminiResult, brandName: kwMatch.brandName };
         matchSource = "keyword";
       }
     }
@@ -365,7 +394,18 @@ export async function POST(req: NextRequest) {
     // 最終フォールバック（プレミアム限定）: 手動登録した参照画像との類似検索
     // ロゴ・エンブレムのみで文字情報がほぼ無いタグ向け。参照画像が未登録のブランドには効果がない。
     // こちらも同様の理由でguessedBrandが既にある場合は上書きしない。
-    if (!geminiResult.brandName && !geminiResult.guessedBrand && useAdvancedMatching) {
+    //
+    // タグから文字が読み取れている場合（perceivedTextがある）は、この経路を使ってはならない。
+    // 画像の類似度は「白い長方形のタグ＋暗い色の裏地」のような構図の一致だけでも
+    // しきい値を超えることがあり、タグに明記されている文字とは無関係なブランドで
+    // 結果を上書きしてしまう（実例：「STEFANEL」と明記されたタグが「CELINE」と判定された）。
+    // 文字が読めているなら、その文字こそが最も確かな根拠である。
+    if (
+      !geminiResult.brandName &&
+      !geminiResult.guessedBrand &&
+      !geminiResult.perceivedText &&
+      useAdvancedMatching
+    ) {
       try {
         const vector = await embedImage(base64Images[0]);
         const matches = await queryReferenceImages(vector, 3);
@@ -375,7 +415,7 @@ export async function POST(req: NextRequest) {
           if (best.score >= VECTOR_MATCH_THRESHOLD) {
             const vecMatch = brandEntries.find((e) => norm(e.brandName) === norm(best.brandName));
             if (vecMatch) {
-              geminiResult = { brandName: vecMatch.brandName };
+              geminiResult = { ...geminiResult, brandName: vecMatch.brandName };
               matchSource = "vector-similarity";
             }
           }
@@ -392,10 +432,12 @@ export async function POST(req: NextRequest) {
     const debugText = isDeveloper ? debugLines.join("\n") : "";
     const result = buildResult(geminiResult, brandEntries, debugText);
 
-    // 判定できなかったタグの読み取り結果を記録しておき、DBへ追加すべき
-    // ブランドを出現回数順に把握できるようにする。
-    if (!result.success) {
-      await recordUnmatchedRead(result.perceivedText);
+    // 判定できなかった／DBに無かったタグの読み取り結果を記録しておき、
+    // 追加すべきブランドを出現回数順に把握できるようにする。
+    // 「未登録ブランドとして返せた」ケースこそDBへ追加すべき筆頭なので、
+    // 成功扱いであっても同じように記録する。
+    if (!result.success || result.unregistered) {
+      await recordUnmatchedRead(result.perceivedText ?? result.brandName);
     }
 
     // ブランド確定後に相場情報を取得
