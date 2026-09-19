@@ -332,6 +332,7 @@ export default function HomePage() {
   const [firstLaunchInput, setFirstLaunchInput] = useState("");
   const [firstLaunchError, setFirstLaunchError] = useState("");
   const [firstLaunchSubmitting, setFirstLaunchSubmitting] = useState(false);
+  const [showCodeEntry, setShowCodeEntry] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showStandaloneNoCodePrompt, setShowStandaloneNoCodePrompt] = useState(false);
 
@@ -1044,6 +1045,10 @@ export default function HomePage() {
         />
       )}
 
+      {/* 初回起動。動画などから来た初見の利用者は、ここが最初に見る画面になる。
+          以前は「12桁のIDコードをお持ちですか？」と問い、押せない復元ボタンを主役に置き、
+          唯一押せる「新しく始める」を灰色の下線リンクにしていた。
+          新規の利用者が大半なので、まず始められることを主にする。 */}
       {showFirstLaunchPrompt && (
         <div className="modal-overlay">
           <div className="sheet-box">
@@ -1054,48 +1059,66 @@ export default function HomePage() {
             </div>
             <div className="modal-divider" />
             <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
-              以前に発行された12桁のIDコードをお持ちですか？
+              タグを撮影すると、ブランド名と買取相場の目安が表示されます。
               <br />
-              （ホーム画面に追加したアプリと、通常のブラウザとで別々に保存されるため、
-              以前の仕入れ記録を引き継ぐにはコードの入力が必要です）
-            </div>
-            <div className="field">
-              <label className="field-label">IDコード（お持ちの場合）</label>
-              <input
-                className="field-input"
-                value={firstLaunchInput}
-                onChange={(e) => setFirstLaunchInput(e.target.value)}
-                placeholder="XXXX-XXXX-XXXX"
-                disabled={firstLaunchSubmitting}
-              />
-              {firstLaunchError && <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{firstLaunchError}</div>}
+              会員登録は不要です。そのまま始められます。
             </div>
             <button
               type="button"
               className="btn btn-submit"
-              onClick={submitFirstLaunchRestore}
-              disabled={firstLaunchSubmitting || !firstLaunchInput.trim()}
-              style={{ marginTop: 12 }}
-            >
-              このコードで復元する
-            </button>
-            <button
-              type="button"
               onClick={startFreshAccount}
               disabled={firstLaunchSubmitting}
-              style={{
-                marginTop: 10,
-                width: "100%",
-                background: "none",
-                border: "none",
-                color: "var(--gray)",
-                fontSize: 12,
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
             >
-              コードは無い（新しく始める）
+              はじめる
             </button>
+            {!showCodeEntry ? (
+              <button
+                type="button"
+                onClick={() => setShowCodeEntry(true)}
+                disabled={firstLaunchSubmitting}
+                style={{
+                  marginTop: 12,
+                  width: "100%",
+                  background: "none",
+                  border: "none",
+                  color: "var(--gray)",
+                  fontSize: 12,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+              >
+                以前のIDコードをお持ちの方
+              </button>
+            ) : (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, lineHeight: 1.7, color: "var(--gray)", marginBottom: 8 }}>
+                  ホーム画面に追加したアプリと通常のブラウザとでは記録が別々に保存されます。
+                  以前の仕入れ記録を引き継ぐには、発行済みの12桁のコードを入力してください。
+                </div>
+                <div className="field">
+                  <label className="field-label">IDコード</label>
+                  <input
+                    className="field-input"
+                    value={firstLaunchInput}
+                    onChange={(e) => setFirstLaunchInput(e.target.value)}
+                    placeholder="XXXX-XXXX-XXXX"
+                    disabled={firstLaunchSubmitting}
+                  />
+                  {firstLaunchError && (
+                    <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{firstLaunchError}</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-submit"
+                  onClick={submitFirstLaunchRestore}
+                  disabled={firstLaunchSubmitting || !firstLaunchInput.trim()}
+                  style={{ marginTop: 12 }}
+                >
+                  このコードで復元する
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
