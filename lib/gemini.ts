@@ -1,5 +1,6 @@
 import { norm, type BrandEntry } from "./matching";
 import type { VisionResult } from "./vision";
+import { getRedis } from "./redisClient";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 
@@ -288,13 +289,57 @@ export interface MarketAdvice {
   listingCount?: string;
 }
 
+
+function flattenAdviceField(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map((v) => flattenAdviceField(v) ?? "").filter(Boolean).join("\n");
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([k, v]) => `${k}：${flattenAdviceField(v) ?? ""}`)
+      .join("\n");
+  }
+  return String(value);
+}
+
 // ブランド確定後に呼び出し、古着市場の相場を返す。エラー時はnull。
+// 相場はGoogle検索の結果を元に生成しているため、同じブランドでも呼び出すたびに
+// 数値が変わる（実測で平均額が3倍ぶれた）。仕入れ判断に使う数字が見るたび変わるのは
+// 相場情報として成立しないため、ブランド単位でキャッシュして同じ値を返す。
+const MARKET_CACHE_TTL_SEC = 14 * 24 * 60 * 60;
+
+function marketCacheKey(brandName: string): string {
+  return `market_${brandName.toLowerCase().replace(/\s+/g, "")}`;
+}
+
 export async function callGeminiAdvice(brandName: string): Promise<MarketAdvice | null> {
+  const redis = getRedis();
+  const key = marketCacheKey(brandName);
+
+  if (redis) {
+    try {
+      const cached = await redis.get<MarketAdvice>(key);
+      if (cached) return cached;
+    } catch (e) {
+      console.error("[callGeminiAdvice] キャッシュ読み込み失敗", e);
+    }
+  }
+
   // まずGoogle検索グラウンディング付きで試す
-  const grounded = await callGeminiAdviceInternal(brandName, true);
-  if (grounded) return grounded;
-  // 失敗したら、グラウンディング無しで再試行する
-  return callGeminiAdviceInternal(brandName, false);
+  const advice =
+    (await callGeminiAdviceInternal(brandName, true)) ??
+    // 失敗したら、グラウンディング無しで再試行する
+    (await callGeminiAdviceInternal(brandName, false));
+
+  if (advice && redis) {
+    try {
+      await redis.set(key, advice, { ex: MARKET_CACHE_TTL_SEC });
+    } catch (e) {
+      console.error("[callGeminiAdvice] キャッシュ保存失敗", e);
+    }
+  }
+
+  return advice;
 }
 
 async function callGeminiAdviceInternal(brandName: string, useGrounding: boolean): Promise<MarketAdvice | null> {
@@ -358,7 +403,14 @@ async function callGeminiAdviceInternal(brandName: string, useGrounding: boolean
       return null;
     }
 
-    return JSON.parse(jsonMatch[0]) as MarketAdvice;
+    // モデルが項目を文字列ではなくオブジェクト（{"Tシャツ": "..."} 形式）で
+    // 返してくることがあるため、表示側が壊れないよう文字列に揃える。
+    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    return {
+      popularItems: flattenAdviceField(parsed.popularItems),
+      marketValue: flattenAdviceField(parsed.marketValue),
+      listingCount: flattenAdviceField(parsed.listingCount),
+    };
   } catch (e) {
     console.error(`[callGeminiAdvice${useGrounding ? "/grounded" : "/fallback"}] 例外:`, e);
     return null;

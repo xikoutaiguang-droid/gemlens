@@ -159,9 +159,12 @@ function MarketSection({ info }: { info?: MarketAdvice | null }) {
         </div>
       </div>
       <div className="market-block">
-        <div className="market-block-label">中古相場（直近）</div>
+        <div className="market-block-label">買取相場の目安（AI推定）</div>
         <div className="market-block-value">
           <PriceList text={info.marketValue} />
+        </div>
+        <div className="market-block-note">
+          古着店が買い取る際の価格帯です。販売価格ではありません（販売価格の3〜5割が目安）。
         </div>
       </div>
       {info.listingCount && (

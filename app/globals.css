@@ -288,6 +288,8 @@ header .logo-text {
 #disp-error { font-size: 15px; color: #333; line-height: 1.6; font-weight: 600; }
 
 /* 判定できなかった場合に、読み取れた文字と相場確認の導線を出す領域 */
+.market-block-note { font-size: 11px; color: var(--gray); line-height: 1.6; margin-top: 6px; }
+
 #perceived-wrap { border: 2px solid var(--black); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 #perceived-label { font-size: 10px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
 #perceived-text { font-size: 16px; font-weight: 700; color: var(--black); word-break: break-word; line-height: 1.5; }
