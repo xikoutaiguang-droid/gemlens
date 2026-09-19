@@ -664,9 +664,17 @@ export default function HomePage() {
             </Link>
           )}
           {usage && plan === "free" && (
-            <span className="usage-badge">
-              {usage.isDeveloper ? "DEV" : "残り"} {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
-            </span>
+            usage.isDeveloper ? (
+              <span className="usage-badge">DEV {Math.max(usage.limit - usage.count, 0)}/{usage.limit}</span>
+            ) : (
+              <Link
+                href="/upgrade"
+                className="usage-badge"
+                onClick={(e) => e.stopPropagation()}
+              >
+                残り {Math.max(usage.limit - usage.count, 0)}/{usage.limit}
+              </Link>
+            )
           )}
           {plan !== "free" && (
             <span className="usage-badge">{plan === "premium" ? "PREMIUM" : "STANDARD"}</span>
@@ -829,7 +837,16 @@ export default function HomePage() {
                 </div>
               )}
               {result?.limitReached && plan === "free" && (
-                <RewardedAdButton usage={usage} onGranted={setUsage} />
+                <div id="limit-upsell">
+                  <div id="limit-upsell-title">続けてスキャンするには</div>
+                  <Link href="/upgrade" id="limit-upsell-btn">
+                    プランを見る（¥980 / 月〜）
+                  </Link>
+                  <div id="limit-upsell-note">
+                    STANDARDで1日の回数上限がなくなります。PREMIUMは7日間無料でお試しいただけます。
+                  </div>
+                  <RewardedAdButton usage={usage} onGranted={setUsage} />
+                </div>
               )}
             </div>
           )}

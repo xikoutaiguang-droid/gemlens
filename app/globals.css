@@ -300,6 +300,17 @@ header .logo-text {
 }
 #perceived-note { font-size: 11px; color: var(--gray); line-height: 1.6; }
 
+/* 無料枠を使い切った瞬間は、製品内で最も購買意欲が高い。
+   従来はここで行き止まりになっていた（広告ユニット未設定のため広告ボタンも出ない）。 */
+#limit-upsell { border: 2px solid var(--black); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+#limit-upsell-title { font-size: 10px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
+#limit-upsell-btn {
+  display: inline-block; align-self: flex-start;
+  background: var(--red); color: #fff; text-decoration: none;
+  font-size: 13px; font-weight: 700; padding: 10px 16px;
+}
+#limit-upsell-note { font-size: 11px; color: var(--gray); line-height: 1.6; }
+
 #debug-wrap { margin-top: 20px; width: 100%; border-top: 2px solid #eee; padding-top: 12px; }
 #debug-label { font-size: 10px; color: #ccc; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
 #disp-debug  { font-size: 11px; color: #bbb; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
