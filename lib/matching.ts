@@ -80,7 +80,7 @@ function isGenericKeyword(rawKw: string): boolean {
 // （同様に ARMEN⊂gARMENt、LIMIT⊂LIMITed、PROD⊂PRODuct）。
 // そこで空白・記号を区切りとしたトークン列に分解し、
 // キーワードが「トークンの連続した並びとして現れる」場合のみ一致とみなす。
-function tokenize(str: unknown): string[] {
+export function tokenize(str: unknown): string[] {
   if (str === null || str === undefined) return [];
   return String(str)
     .toLowerCase()
@@ -103,6 +103,23 @@ function tokensContainSequence(textTokens: string[], kwTokens: string[]): boolea
     if (matched) return true;
   }
   return false;
+}
+
+// 系列ブランド（例：BEAMS → BEAMS PLUS）は、親ブランド名が子ブランド名の
+// 先頭または末尾に「単語として」現れる場合にのみ成立するとみなす。
+// 綴りの一部が一致するだけで判定すると、AMI→AMIRI、BAL→BALENCIAGA、
+// On→CHAMPION/HOUSTON のように、まったく無関係なブランドを系列扱いしてしまう
+// （実データで誤検出80件を確認）。
+export function isFamilyNameVariant(childName: string, parentName: string): boolean {
+  const childTokens = tokenize(childName);
+  const parentTokens = tokenize(parentName);
+  if (parentTokens.length === 0 || childTokens.length <= parentTokens.length) return false;
+
+  const startsWithParent = parentTokens.every((t, i) => childTokens[i] === t);
+  const endsWithParent = parentTokens.every(
+    (t, i) => childTokens[childTokens.length - parentTokens.length + i] === t
+  );
+  return startsWithParent || endsWithParent;
 }
 
 export function matchByKeywords(rawText: string | null, brandEntries: BrandEntry[]): BrandEntry | null {

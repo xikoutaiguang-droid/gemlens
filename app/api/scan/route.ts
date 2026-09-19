@@ -9,7 +9,7 @@ import {
   type LogoGuessResult,
   type MarketAdvice,
 } from "@/lib/gemini";
-import { matchBrandName, matchByKeywords, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
+import { matchBrandName, matchByKeywords, isFamilyNameVariant, norm, normLoose, normPlusVariant, type BrandEntry } from "@/lib/matching";
 import { getProStatus, hasAdvancedMatching, hasUnlimitedScans } from "@/lib/pro";
 import { checkAndIncrementUsage, isDeveloperKey, DAILY_FREE_LIMIT, DAILY_AD_BONUS_LIMIT, type UsageResult } from "@/lib/rateLimit";
 import { recordUnmatchedRead } from "@/lib/unmatchedLog";
@@ -56,8 +56,7 @@ async function callGeminiVision(
         const normChild = norm(e.brandName);
         if (normChild === normParent) return false;
         if (e.parentBrand && norm(e.parentBrand) === normParent) return true;
-        if (normChild.length <= normParent.length) return false;
-        return normChild.startsWith(normParent) || normChild.endsWith(normParent);
+        return isFamilyNameVariant(e.brandName, matched.brandName);
       });
       if (children.length > 0) {
         // タグ上の小さな記号（例：BEAMSの「+」）は、実写では色や大きさの都合で
